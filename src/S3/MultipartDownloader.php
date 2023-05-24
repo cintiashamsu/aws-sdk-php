@@ -1,8 +1,9 @@
 <?php
 namespace Aws\S3;
 
+use Aws\Arn\ArnParser;
 use Aws\HashingStream;
-use Aws\Multipart\AbstractUploader;
+use Aws\Multipart\AbstractDownloader;
 use Aws\PhpHash;
 use Aws\ResultInterface;
 use GuzzleHttp\Psr7;
@@ -10,61 +11,23 @@ use Psr\Http\Message\StreamInterface as Stream;
 use Aws\S3\Exception\S3MultipartUploadException;
 
 /**
- * Encapsulates the execution of a multipart upload to S3 or Glacier.
+ * Encapsulates the execution of a multipart download to S3.
  */
-class MultipartDownloader extends AbstractUploader
+class MultipartDownloader extends AbstractDownloader
 {
-    use MultipartUploadingTrait;
+    use MultipartDownloadingTrait;
 
     const PART_MIN_SIZE = 5242880;
     const PART_MAX_SIZE = 5368709120;
     const PART_MAX_NUM = 10000;
 
-    /**
-     * Creates a multipart upload for an S3 object.
-     *
-     * The valid configuration options are as follows:
-     *
-     * - acl: (string) ACL to set on the object being upload. Objects are
-     *   private by default.
-     * - before_complete: (callable) Callback to invoke before the
-     *   `CompleteMultipartUpload` operation. The callback should have a
-     *   function signature like `function (Aws\Command $command) {...}`.
-     * - before_initiate: (callable) Callback to invoke before the
-     *   `CreateMultipartUpload` operation. The callback should have a function
-     *   signature like `function (Aws\Command $command) {...}`.
-     * - before_upload: (callable) Callback to invoke before any `UploadPart`
-     *   operations. The callback should have a function signature like
-     *   `function (Aws\Command $command) {...}`.
-     * - bucket: (string, required) Name of the bucket to which the object is
-     *   being uploaded, or an S3 access point ARN.
-     * - concurrency: (int, default=int(5)) Maximum number of concurrent
-     *   `UploadPart` operations allowed during the multipart upload.
-     * - key: (string, required) Key to use for the object being uploaded.
-     * - params: (array) An array of key/value parameters that will be applied
-     *   to each of the sub-commands run by the uploader as a base.
-     *   Auto-calculated options will override these parameters. If you need
-     *   more granularity over parameters to each sub-command, use the before_*
-     *   options detailed above to update the commands directly.
-     * - part_size: (int, default=int(5242880)) Part size, in bytes, to use when
-     *   doing a multipart upload. This must between 5 MB and 5 GB, inclusive.
-     * - prepare_data_source: (callable) Callback to invoke before starting the
-     *   multipart upload workflow. The callback should have a function
-     *   signature like `function () {...}`.
-     * - state: (Aws\Multipart\UploadState) An object that represents the state
-     *   of the multipart upload and that is used to resume a previous upload.
-     *   When this option is provided, the `bucket`, `key`, and `part_size`
-     *   options are ignored.
-     *
-     * @param S3ClientInterface $client Client used for the upload.
-     * @param mixed             $source Source of the data to upload.
-     * @param array             $config Configuration used to perform the upload.
-     */
     public function __construct(
         S3ClientInterface $client,
                           $source,
         array $config = []
     ) {
+        $result = $this->getObjectInfo($client, $config['bucket'], $config['key']);
+        echo $result['ContentLength'];
         parent::__construct($client, $source, array_change_key_case($config) + [
                 'bucket' => null,
                 'key'    => null,
@@ -75,18 +38,26 @@ class MultipartDownloader extends AbstractUploader
         }
     }
 
-    protected function loadUploadWorkflowInfo()
+    public function getObjectInfo($client, $bucket, $key)
+    {
+        return $client->headObject([
+            'Bucket' => $bucket,
+            'Key' => $key,
+        ]);
+    }
+
+    protected function loadDownloadWorkflowInfo()
     {
         return [
             'command' => [
-                'initiate' => 'CreateMultipartUpload',
-                'upload'   => 'UploadPart',
-                'complete' => 'CompleteMultipartUpload',
+                'initiate' => 'getObject',
+                'download'   => 'getObject',
+                'complete' => 'getObject',
             ],
             'id' => [
                 'bucket'    => 'Bucket',
                 'key'       => 'Key',
-                'upload_id' => 'UploadId',
+                'download_id' => 'DownloadId',
             ],
             'part_num' => 'PartNumber',
         ];
@@ -97,7 +68,7 @@ class MultipartDownloader extends AbstractUploader
         // Initialize the array of part data that will be returned.
         $data = [];
 
-        // Apply custom params to UploadPart data
+        // Apply custom params to DownloadPart data
         $config = $this->getConfig();
         $params = isset($config['params']) ? $config['params'] : [];
         foreach ($params as $k => $v) {

@@ -7,9 +7,9 @@ use GuzzleHttp\Psr7;
 use InvalidArgumentException as IAE;
 use Psr\Http\Message\StreamInterface as Stream;
 
-abstract class AbstractDownloader extends AbstractUploadManager
+abstract class AbstractDownloader extends AbstractDownloadManager
 {
-    /** @var Stream Source of the data to be uploaded. */
+    /** @var Stream Source of the data to be downloaded. */
     protected $source;
 
     /**
@@ -25,7 +25,7 @@ abstract class AbstractDownloader extends AbstractUploadManager
 
     /**
      * Create a stream for a part that starts at the current position and
-     * has a length of the upload part size (or less with the final part).
+     * has a length of the download part size (or less with the final part).
      *
      * @param Stream $stream
      *
@@ -41,21 +41,21 @@ abstract class AbstractDownloader extends AbstractUploadManager
         );
     }
 
-    protected function getUploadCommands(callable $resultHandler)
+    protected function getDownloadCommands(callable $resultHandler)
     {
         // Determine if the source can be seeked.
         $seekable = $this->source->isSeekable()
             && $this->source->getMetadata('wrapper_type') === 'plainfile';
 
         for ($partNumber = 1; $this->isEof($seekable); $partNumber++) {
-            // If we haven't already uploaded this part, yield a new part.
-            if (!$this->state->hasPartBeenUploaded($partNumber)) {
+            // If we haven't already downloaded this part, yield a new part.
+            if (!$this->state->hasPartBeenDownloaded($partNumber)) {
                 $partStartPos = $this->source->tell();
                 if (!($data = $this->createPart($seekable, $partNumber))) {
                     break;
                 }
                 $command = $this->client->getCommand(
-                    $this->info['command']['upload'],
+                    $this->info['command']['download'],
                     $data + $this->state->getId()
                 );
                 $command->getHandlerList()->appendSign($resultHandler, 'mup');
@@ -90,7 +90,7 @@ abstract class AbstractDownloader extends AbstractUploadManager
     }
 
     /**
-     * Generates the parameters for an upload part by analyzing a range of the
+     * Generates the parameters for an download part by analyzing a range of the
      * source starting from the current offset up to the part size.
      *
      * @param bool $seekable
