@@ -110,7 +110,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
 
                 $result = (yield $this->execCommand('initiate', $this->getInitiateParams()));
                 $this->determineSourceSize($result['ContentLength']);
-                $this->setStreamPosArray($result['ContentLength']);
+                $this->setStreamPositionArray($result['ContentLength']);
                 $this->state->setUploadId(
                     $this->info['id']['upload_id'],
                     $result[$this->info['id']['upload_id']]

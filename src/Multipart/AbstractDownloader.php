@@ -25,24 +25,6 @@ abstract class AbstractDownloader extends AbstractDownloadManager
         parent::__construct($client, $config);
     }
 
-    /**
-     * Create a stream for a part that starts at the current position and
-     * has a length of the upload part size (or less with the final part).
-     *
-     * @param Stream $stream
-     *
-     * @return Psr7\LimitStream
-     */
-    protected function limitPartStream(Stream $stream)
-    {
-        // Limit what is read from the stream to the part size.
-        return new Psr7\LimitStream(
-            $stream,
-            $this->state->getPartSize(),
-            $this->source->tell()
-        );
-    }
-
     protected function getUploadCommands(callable $resultHandler)
     {
         // Determine if the source can be seeked.

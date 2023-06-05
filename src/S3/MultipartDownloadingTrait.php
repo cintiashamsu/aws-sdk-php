@@ -8,8 +8,6 @@ use GuzzleHttp\Psr7;
 
 trait MultipartDownloadingTrait
 {
-    private $uploadedBytes = 0;
-
     /**
      * Creates an UploadState object for a multipart upload by querying the
      * service for the specified upload's information.
@@ -58,20 +56,14 @@ trait MultipartDownloadingTrait
             'PartNumber' => $command['PartNumber'],
             'ETag'       => $this->extractETag($result),
         ]);
-//        $bodyStream = Psr7\Utils::streamFor($result['Body']);
-//
-//        $this->destStream->write($bodyStream->read(5242880));
-//        $this->destStream->seek(MultipartDownloader::PART_MIN_SIZE);
-//
-//        $this->uploadedBytes += $command["ContentLength"];
+
         $this->writeDestStream($command['PartNumber'], $result['Body']);
-        $this->getState()->displayProgress($this->uploadedBytes);
     }
 
     protected function writeDestStream($partNum, $body)
     {
         $bodyStream = Psr7\Utils::streamFor($body);
-        $this->destStream->seek($this->StreamPosArray[$partNum]);
+        $this->destStream->seek($this->streamPositionArray[$partNum]);
         $this->destStream->write($bodyStream->read(5242880));
     }
 
@@ -128,16 +120,16 @@ trait MultipartDownloadingTrait
         return $params;
     }
 
-    public function setStreamPosArray($sourceSize)
-    {
-        $parts = ceil($sourceSize/$this->partSize);
-        $position = 0;
-        for ($i=1;$i<=$parts;$i++) {
-            $this->StreamPosArray []= $position;
-            $position += $this->partSize;
-        }
-        print_r($this->StreamPosArray);
-    }
+//    public function setStreamPosArray($sourceSize)
+//    {
+//        $parts = ceil($sourceSize/$this->partSize);
+//        $position = 0;
+//        for ($i=1;$i<=$parts;$i++) {
+//            $this->StreamPosArray []= $position;
+//            $position += $this->partSize;
+//        }
+//        print_r($this->streamPositionArray);
+//    }
 
     /**
      * @return UploadState
@@ -148,14 +140,4 @@ trait MultipartDownloadingTrait
      * @return array
      */
     abstract protected function getConfig();
-
-    /**
-     * @return int
-     */
-    abstract protected function getSourceSize();
-
-    /**
-     * @return string|null
-     */
-    abstract protected function getSourceMimeType();
 }

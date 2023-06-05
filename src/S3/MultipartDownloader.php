@@ -10,7 +10,7 @@ use Psr\Http\Message\StreamInterface as Stream;
 use Aws\S3\Exception\S3MultipartDownloadException;
 
 /**
- * Encapsulates the execution of a multipart upload to S3 or Glacier.
+ * Encapsulates the execution of a multipart download to S3.
  */
 class MultipartDownloader extends AbstractDownloader
 {
@@ -21,11 +21,11 @@ class MultipartDownloader extends AbstractDownloader
     const PART_MAX_NUM = 10000;
 
     /**
-     * Creates a multipart upload for an S3 object.
+     * Creates a multipart download for an S3 object.
      *
      * The valid configuration options are as follows:
      *
-     * - acl: (string) ACL to set on the object being upload. Objects are
+     * - acl: (string) ACL to set on the object being download. Objects are
      *   private by default.
      * - before_complete: (callable) Callback to invoke before the
      *   `CompleteMultipartUpload` operation. The callback should have a
@@ -57,23 +57,31 @@ class MultipartDownloader extends AbstractDownloader
      *   options are ignored.
      *
      * @param S3ClientInterface $client Client used for the upload.
-     * @param mixed             $source Source of the data to upload.
+     * @param mixed             $dest Destination for data to download.
      * @param array             $config Configuration used to perform the upload.
      */
     public function __construct(
         S3ClientInterface $client,
-                          $source,
+        $dest,
         array $config = []
     ) {
-        $this->destStream = $this->createDestStream($source);
-        parent::__construct($client, $source, array_change_key_case($config) + [
+        $this->destStream = $this->createDestStream($dest);
+//        if (isset($config['multipartDownloadType'])) {
+//            if ($config['multipartDownloadType'] == 'Part') {
+//                if (isset($config['Range'])) {
+//                    echo 'do something!!!';
+//                }
+//            } elseif ($config['multipartDownloadType'] == 'Range') {
+//                if (isset($config['Range'])) {
+//                    echo 'do something!!!';
+//                }
+//            }
+//        }
+        parent::__construct($client, $dest, array_change_key_case($config) + [
                 'bucket' => null,
                 'key'    => null,
                 'exception_class' => S3MultipartDownloadException::class,
             ]);
-//        if (isset($config['track_upload']) && $config['track_upload']) {
-//            $this->getState()->setProgressThresholds($this->source->getSize());
-//        }
     }
 
     protected function loadUploadWorkflowInfo()
@@ -82,7 +90,7 @@ class MultipartDownloader extends AbstractDownloader
             'command' => [
                 'initiate' => 'HeadObject',
                 'upload'   => 'GetObject',
-                'complete' => 'CompleteMultipartUpload',
+//                'complete' => 'CompleteMultipartUpload',
             ],
             'id' => [
                 'bucket'    => 'Bucket',
@@ -107,7 +115,18 @@ class MultipartDownloader extends AbstractDownloader
             $data[$k] = $v;
         }
 
-        $data['PartNumber'] = $number;
+        if (isset($config['multipartdownloadtype'])
+            && $config['multipartdownloadtype'] === 'Part') {
+            $data['PartNumber'] = $number;
+            echo 'parts';
+        } elseif (isset($config['multipartdownloadtype'])
+            && $config['multipartdownloadtype'] === 'Range') {
+            $partEndPos = $partStartPos+self::PART_MIN_SIZE;
+            $data['Range'] = 'bytes='.$partStartPos.'-'.$partEndPos;
+            echo 'ranges';
+        }
+
+//        $data['PartNumber'] = $number;
 
         if (isset($config['add_content_md5'])
             && $config['add_content_md5'] === true
@@ -123,45 +142,15 @@ class MultipartDownloader extends AbstractDownloader
         return $result['ETag'];
     }
 
-    protected function getSourceMimeType()
-    {
-        if ($uri = $this->source->getMetadata('uri')) {
-            return Psr7\MimeType::fromFilename($uri)
-                ?: 'application/octet-stream';
-        }
-    }
-
-    protected function getSourceSize()
-    {
-        return $this->source->getSize();
-    }
-
-    public function setStreamPosArray($sourceSize)
+    public function setStreamPositionArray($sourceSize)
     {
         $parts = ceil($sourceSize/$this->state->getPartSize());
         $position = 0;
         for ($i=1;$i<=$parts;$i++) {
-            $this->StreamPosArray [$i]= $position;
+            $this->streamPositionArray [$i]= $position;
             $position += $this->state->getPartSize();
         }
-        print_r($this->StreamPosArray);
-    }
-
-    /**
-     * Decorates a stream with a sha256 linear hashing stream.
-     *
-     * @param Stream $stream Stream to decorate.
-     * @param array  $data   Part data to augment with the hash result.
-     *
-     * @return Stream
-     */
-    private function decorateWithHashes(Stream $stream, array &$data)
-    {
-        // Decorate source with a hashing stream
-        $hash = new PhpHash('sha256');
-        return new HashingStream($stream, $hash, function ($result) use (&$data) {
-            $data['ContentSHA256'] = bin2hex($result);
-        });
+        print_r($this->streamPositionArray);
     }
 
     protected function createDestStream($filePath)
