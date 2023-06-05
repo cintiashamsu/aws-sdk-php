@@ -4,19 +4,20 @@ namespace Aws\S3;
 use Aws\CommandInterface;
 use Aws\Multipart\DownloadState;
 use Aws\ResultInterface;
+use GuzzleHttp\Psr7;
 
 trait MultipartDownloadingTrait
 {
-    private $downloadedBytes = 0;
+    private $uploadedBytes = 0;
 
     /**
-     * Creates an DownloadState object for a multipart download by querying the
-     * service for the specified download's information.
+     * Creates an UploadState object for a multipart upload by querying the
+     * service for the specified upload's information.
      *
-     * @param S3ClientInterface $client   S3Client used for the download.
-     * @param string            $bucket   Bucket for the multipart download.
-     * @param string            $key      Object key for the multipart download.
-     * @param string            $downloadId Download ID for the multipart download.
+     * @param S3ClientInterface $client   S3Client used for the upload.
+     * @param string            $bucket   Bucket for the multipart upload.
+     * @param string            $key      Object key for the multipart upload.
+     * @param string            $uploadId Upload ID for the multipart upload.
      *
      * @return DownloadState
      */
@@ -24,12 +25,12 @@ trait MultipartDownloadingTrait
         S3ClientInterface $client,
                           $bucket,
                           $key,
-                          $downloadId
+                          $uploadId
     ) {
         $state = new DownloadState([
             'Bucket'   => $bucket,
             'Key'      => $key,
-            'DownloadId' => $downloadId,
+            'UploadId' => $uploadId,
         ]);
 
         foreach ($client->getPaginator('ListParts', $state->getId()) as $result) {
@@ -37,9 +38,9 @@ trait MultipartDownloadingTrait
             if (!$state->getPartSize()) {
                 $state->setPartSize($result->search('Parts[0].Size'));
             }
-            // Mark all the parts returned by ListParts as downloaded.
+            // Mark all the parts returned by ListParts as uploaded.
             foreach ($result['Parts'] as $part) {
-                $state->markPartAsDownloaded($part['PartNumber'], [
+                $state->markPartAsUploaded($part['PartNumber'], [
                     'PartNumber' => $part['PartNumber'],
                     'ETag'       => $part['ETag']
                 ]);
@@ -53,13 +54,25 @@ trait MultipartDownloadingTrait
 
     protected function handleResult(CommandInterface $command, ResultInterface $result)
     {
-        $this->getState()->markPartAsDownloaded($command['PartNumber'], [
+        $this->getState()->markPartAsUploaded($command['PartNumber'], [
             'PartNumber' => $command['PartNumber'],
             'ETag'       => $this->extractETag($result),
         ]);
+//        $bodyStream = Psr7\Utils::streamFor($result['Body']);
+//
+//        $this->destStream->write($bodyStream->read(5242880));
+//        $this->destStream->seek(MultipartDownloader::PART_MIN_SIZE);
+//
+//        $this->uploadedBytes += $command["ContentLength"];
+        $this->writeDestStream($command['PartNumber'], $result['Body']);
+        $this->getState()->displayProgress($this->uploadedBytes);
+    }
 
-        $this->downloadedBytes += $command["ContentLength"];
-        $this->getState()->displayProgress($this->downloadedBytes);
+    protected function writeDestStream($partNum, $body)
+    {
+        $bodyStream = Psr7\Utils::streamFor($body);
+        $this->destStream->seek($this->StreamPosArray[$partNum]);
+        $this->destStream->write($bodyStream->read(5242880));
     }
 
     abstract protected function extractETag(ResultInterface $result);
@@ -69,8 +82,8 @@ trait MultipartDownloadingTrait
         $config = $this->getConfig();
         $params = isset($config['params']) ? $config['params'] : [];
 
-        $params['MultipartDownload'] = [
-            'Parts' => $this->getState()->getDownloadedParts()
+        $params['MultipartUpload'] = [
+            'Parts' => $this->getState()->getUploadedParts()
         ];
 
         return $params;
@@ -81,13 +94,13 @@ trait MultipartDownloadingTrait
         // Make sure the part size is set.
         $partSize = $this->getConfig()['part_size'] ?: MultipartDownloader::PART_MIN_SIZE;
 
-        // Adjust the part size to be larger for known, x-large downloads.
-        if ($sourceSize = $this->getSourceSize()) {
-            $partSize = (int) max(
-                $partSize,
-                ceil($sourceSize / MultipartDownloader::PART_MAX_NUM)
-            );
-        }
+        // Adjust the part size to be larger for known, x-large uploads.
+//        if ($sourceSize = $this->getSourceSize()) {
+//            $partSize = (int) max(
+//                $partSize,
+//                ceil($sourceSize / MultipartDownloader::PART_MAX_NUM)
+//            );
+//        }
 
         // Ensure that the part size follows the rules: 5 MB <= size <= 5 GB.
         if ($partSize < MultipartDownloader::PART_MIN_SIZE || $partSize > MultipartDownloader::PART_MAX_SIZE) {
@@ -108,15 +121,26 @@ trait MultipartDownloadingTrait
         }
 
         // Set the ContentType if not already present
-        if (empty($params['ContentType']) && $type = $this->getSourceMimeType()) {
-            $params['ContentType'] = $type;
-        }
+//        if (empty($params['ContentType']) && $type = $this->getSourceMimeType()) {
+//            $params['ContentType'] = $type;
+//        }
 
         return $params;
     }
 
+    public function setStreamPosArray($sourceSize)
+    {
+        $parts = ceil($sourceSize/$this->partSize);
+        $position = 0;
+        for ($i=1;$i<=$parts;$i++) {
+            $this->StreamPosArray []= $position;
+            $position += $this->partSize;
+        }
+        print_r($this->StreamPosArray);
+    }
+
     /**
-     * @return DownloadState
+     * @return UploadState
      */
     abstract protected function getState();
 

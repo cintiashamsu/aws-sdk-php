@@ -9,8 +9,10 @@ use Psr\Http\Message\StreamInterface as Stream;
 
 abstract class AbstractDownloader extends AbstractDownloadManager
 {
-    /** @var Stream Source of the data to be downloaded. */
+    /** @var Stream Source of the data to be uploaded. */
     protected $source;
+
+    protected $position = 0;
 
     /**
      * @param Client $client
@@ -19,13 +21,13 @@ abstract class AbstractDownloader extends AbstractDownloadManager
      */
     public function __construct(Client $client, $source, array $config = [])
     {
-        $this->source = $this->determineSource($source);
+//        $this->source = $this->determineSource($source);
         parent::__construct($client, $config);
     }
 
     /**
      * Create a stream for a part that starts at the current position and
-     * has a length of the download part size (or less with the final part).
+     * has a length of the upload part size (or less with the final part).
      *
      * @param Stream $stream
      *
@@ -41,21 +43,18 @@ abstract class AbstractDownloader extends AbstractDownloadManager
         );
     }
 
-    protected function getDownloadCommands(callable $resultHandler)
+    protected function getUploadCommands(callable $resultHandler)
     {
         // Determine if the source can be seeked.
-        $seekable = $this->source->isSeekable()
-            && $this->source->getMetadata('wrapper_type') === 'plainfile';
-
-        for ($partNumber = 1; $this->isEof($seekable); $partNumber++) {
-            // If we haven't already downloaded this part, yield a new part.
-            if (!$this->state->hasPartBeenDownloaded($partNumber)) {
-                $partStartPos = $this->source->tell();
-                if (!($data = $this->createPart($seekable, $partNumber))) {
+        for ($partNumber = 1; $this->isEof($this->position); $partNumber++) {
+            // If we haven't already uploaded this part, yield a new part.
+            if (!$this->state->hasPartBeenUploaded($partNumber)) {
+                $partStartPos = $this->position;
+                if (!($data = $this->createPart($partStartPos, $partNumber))) {
                     break;
                 }
                 $command = $this->client->getCommand(
-                    $this->info['command']['download'],
+                    $this->info['command']['upload'],
                     $data + $this->state->getId()
                 );
                 $command->getHandlerList()->appendSign($resultHandler, 'mup');
@@ -72,25 +71,18 @@ abstract class AbstractDownloader extends AbstractDownloadManager
                 }
 
                 yield $command;
-                if ($this->source->tell() > $partStartPos) {
-                    continue;
-                }
+//                if ($this->source->tell() > $partStartPos) {
+//                    continue;
+//                }
             }
 
             // Advance the source's offset if not already advanced.
-            if ($seekable) {
-                $this->source->seek(min(
-                    $this->source->tell() + $this->state->getPartSize(),
-                    $this->source->getSize()
-                ));
-            } else {
-                $this->source->read($this->state->getPartSize());
-            }
+            $this->position += $this->state->getPartSize();
         }
     }
 
     /**
-     * Generates the parameters for an download part by analyzing a range of the
+     * Generates the parameters for an upload part by analyzing a range of the
      * source starting from the current offset up to the part size.
      *
      * @param bool $seekable
@@ -107,11 +99,9 @@ abstract class AbstractDownloader extends AbstractDownloadManager
      *
      * @return bool
      */
-    private function isEof($seekable)
+    private function isEof($position)
     {
-        return $seekable
-            ? $this->source->tell() < $this->source->getSize()
-            : !$this->source->eof();
+        return $position <= $this->sourceSize;
     }
 
     /**
@@ -124,26 +114,25 @@ abstract class AbstractDownloader extends AbstractDownloadManager
      *
      * @return Stream
      */
-    private function determineSource($source)
+    protected function determineSourceSize($size)
     {
-        // Use the contents of a file as the data source.
-        if (is_string($source)) {
-            $source = Psr7\Utils::tryFopen($source, 'r');
-        }
-
-        // Create a source stream.
-        $stream = Psr7\Utils::streamFor($source);
-        if (!$stream->isReadable()) {
-            throw new IAE('Source stream must be readable.');
-        }
-
-        return $stream;
+        echo 'abstract downloader size: ' . $size;
+        $this->sourceSize = $size;
+//        $generator = function ($bytes) {
+//            for ($i = 0; $i < $bytes; $i++) {
+//                yield '.';
+//            }
+//        };
+//
+//        $iter = $generator($this->sourceSize);
+//        $stream = Psr7\Utils::streamFor($iter);
+//        $this->source = $stream;
     }
 
     protected function getNumberOfParts($partSize)
     {
-        if ($sourceSize = $this->source->getSize()) {
-            return ceil($sourceSize/$partSize);
+        if ($this->sourceSize) {
+            return ceil($this->sourceSize/$partSize);
         }
         return null;
     }

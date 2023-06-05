@@ -2,10 +2,10 @@
 namespace Aws\Multipart;
 
 /**
- * Representation of the multipart download.
+ * Representation of the multipart upload.
  *
- * This object keeps track of the state of the download, including the status and
- * which parts have been downloaded.
+ * This object keeps track of the state of the upload, including the status and
+ * which parts have been uploaded.
  */
 class DownloadState
 {
@@ -13,20 +13,36 @@ class DownloadState
     const INITIATED = 1;
     const COMPLETED = 2;
 
-    /** @var array Params used to identity the download. */
+    protected $progressBar = [
+        "Transfer initiated...\n|                    | 0.0%\n",
+        "|==                  | 12.5%\n",
+        "|=====               | 25.0%\n",
+        "|=======             | 37.5%\n",
+        "|==========          | 50.0%\n",
+        "|============        | 62.5%\n",
+        "|===============     | 75.0%\n",
+        "|=================   | 87.5%\n",
+        "|====================| 100.0%\nTransfer complete!\n"
+    ];
+
+    /** @var array Params used to identity the upload. */
     private $id;
 
-    /** @var int Part size being used by the download. */
+    /** @var int Part size being used by the upload. */
     private $partSize;
 
-    /** @var array Parts that have been downloaded. */
-    private $downloadedParts = [];
+    /** @var array Parts that have been uploaded. */
+    private $uploadedParts = [];
 
-    /** @var int Identifies the status the download. */
+    /** @var int Identifies the status the upload. */
     private $status = self::CREATED;
 
+    private $progressThresholds = [];
+
+//    private $displayUploadProgress;
+
     /**
-     * @param array $id Params used to identity the download.
+     * @param array $id Params used to identity the upload.
      */
     public function __construct(array $id)
     {
@@ -34,8 +50,8 @@ class DownloadState
     }
 
     /**
-     * Get the download's ID, which is a tuple of parameters that can uniquely
-     * identify the download.
+     * Get the upload's ID, which is a tuple of parameters that can uniquely
+     * identify the upload.
      *
      * @return array
      */
@@ -45,14 +61,15 @@ class DownloadState
     }
 
     /**
-     * Set's the "download_id", or 3rd part of the download's ID. This typically
-     * only needs to be done after initiating an download.
+     * Set's the "upload_id", or 3rd part of the upload's ID. This typically
+     * only needs to be done after initiating an upload.
      *
-     * @param string $key   The param key of the download_id.
-     * @param string $value The param value of the download_id.
+     * @param string $key   The param key of the upload_id.
+     * @param string $value The param value of the upload_id.
      */
-    public function setDownloadId($key, $value)
+    public function setUploadId($key, $value)
     {
+        // i don't think i need this, instead i need to be sending the size to here?
         $this->id[$key] = $value;
     }
 
@@ -69,50 +86,79 @@ class DownloadState
     /**
      * Set the part size.
      *
-     * @param $partSize int Size of download parts.
+     * @param $partSize int Size of upload parts.
      */
     public function setPartSize($partSize)
     {
         $this->partSize = $partSize;
     }
 
-    /**
-     * Marks a part as being downloaded.
-     *
-     * @param int   $partNumber The part number.
-     * @param array $partData   Data from the download operation that needs to be
-     *                          recalled during the complete operation.
-     */
-    public function markPartAsDownloaded($partNumber, array $partData = [])
+    public function setProgressThresholds($totalSize)
     {
-        $this->DownloadedParts[$partNumber] = $partData;
+        if(!is_int($totalSize)) {
+            throw new \InvalidArgumentException('The total size of the upload must be an int.');
+        }
+
+        $this->progressThresholds[0] = 0;
+        for ($i=1;$i<=8;$i++) {
+            $this->progressThresholds []= round($totalSize*($i/8));
+        }
+        $this->progressBar = array_combine($this->progressThresholds, $this->progressBar);
+        return $this->progressThresholds;
+    }
+
+    public function displayProgress($totalUploaded)
+    {
+        if(!is_int($totalUploaded)) {
+            throw new \InvalidArgumentException('The size of the bytes being uploaded must be an int.');
+        }
+
+        while ($this->progressThresholds
+            && !empty($this->progressBar)
+            && $totalUploaded >= array_key_first($this->progressBar))
+        {
+            echo $this->progressBar[array_key_first($this->progressBar)];
+            unset($this->progressBar[array_key_first($this->progressBar)]);
+        }
     }
 
     /**
-     * Returns whether a part has been downloaded.
+     * Marks a part as being uploaded.
+     *
+     * @param int   $partNumber The part number.
+     * @param array $partData   Data from the upload operation that needs to be
+     *                          recalled during the complete operation.
+     */
+    public function markPartAsUploaded($partNumber, array $partData = [])
+    {
+        $this->uploadedParts[$partNumber] = $partData;
+    }
+
+    /**
+     * Returns whether a part has been uploaded.
      *
      * @param int $partNumber The part number.
      *
      * @return bool
      */
-    public function hasPartBeenDownloaded($partNumber)
+    public function hasPartBeenUploaded($partNumber)
     {
-        return isset($this->downloadedParts[$partNumber]);
+        return isset($this->uploadedParts[$partNumber]);
     }
 
     /**
-     * Returns a sorted list of all the downloaded parts.
+     * Returns a sorted list of all the uploaded parts.
      *
      * @return array
      */
-    public function getDownloadedParts()
+    public function getUploadedParts()
     {
-        ksort($this->downloadedParts);
-        return $this->downloadedParts;
+        ksort($this->uploadedParts);
+        return $this->uploadedParts;
     }
 
     /**
-     * Set the status of the download.
+     * Set the status of the upload.
      *
      * @param int $status Status is an integer code defined by the constants
      *                    CREATED, INITIATED, and COMPLETED on this class.
@@ -124,7 +170,7 @@ class DownloadState
     }
 
     /**
-     * Determines whether the download state is in the INITIATED status.
+     * Determines whether the upload state is in the INITIATED status.
      *
      * @return bool
      */
@@ -134,7 +180,7 @@ class DownloadState
     }
 
     /**
-     * Determines whether the download state is in the COMPLETED status.
+     * Determines whether the upload state is in the COMPLETED status.
      *
      * @return bool
      */

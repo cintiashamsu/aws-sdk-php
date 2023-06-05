@@ -5,7 +5,7 @@ use Aws\AwsClientInterface as Client;
 use Aws\CommandInterface;
 use Aws\CommandPool;
 use Aws\Exception\AwsException;
-use Aws\Exception\MultipartUploadException;
+use Aws\Exception\MultipartDownloadException;
 use Aws\Result;
 use Aws\ResultInterface;
 use GuzzleHttp\Promise;
@@ -14,7 +14,7 @@ use InvalidArgumentException as IAE;
 use Psr\Http\Message\RequestInterface;
 
 /**
- * Encapsulates the execution of a multipart download to S3 or Glacier.
+ * Encapsulates the execution of a multipart upload to S3 or Glacier.
  *
  * @internal
  */
@@ -27,27 +27,26 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
         'part_size'           => null,
         'state'               => null,
         'concurrency'         => self::DEFAULT_CONCURRENCY,
-        //'prepare_data_source' => null,
+        'prepare_data_source' => null,
         'before_initiate'     => null,
         'before_upload'       => null,
         'before_complete'     => null,
-        'exception_class'     => 'Aws\Exception\MultipartUploadException',
+        'exception_class'     => 'Aws\Exception\MultipartDownloadException',
     ];
-    //TO DO: check if we still need default configs
 
-    /** @var Client Client used for the download. */
+    /** @var Client Client used for the upload. */
     protected $client;
 
-    /** @var array Configuration used to perform the download. */
+    /** @var array Configuration used to perform the upload. */
     protected $config;
 
-    /** @var array Service-specific information about the download workflow. */
+    /** @var array Service-specific information about the upload workflow. */
     protected $info;
 
-    /** @var PromiseInterface Promise that represents the multipart download. */
+    /** @var PromiseInterface Promise that represents the multipart upload. */
     protected $promise;
 
-    /** @var DownloadState State used to manage the download. */
+    /** @var UploadState State used to manage the upload. */
     protected $state;
 
     /**
@@ -57,15 +56,15 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
     public function __construct(Client $client, array $config = [])
     {
         $this->client = $client;
-        $this->info = $this->loadDownloadWorkflowInfo();
+        $this->info = $this->loadUploadWorkflowInfo();
         $this->config = $config + self::$defaultConfig;
         $this->state = $this->determineState();
     }
 
     /**
-     * Returns the current state of the download
+     * Returns the current state of the upload
      *
-     * @return DownloadState
+     * @return UploadState
      */
     public function getState()
     {
@@ -73,7 +72,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
     }
 
     /**
-     * Download the source using multipart download operations.
+     * Upload the source using multipart upload operations.
      *
      * @return Result The result of the CompleteMultipartUpload operation.
      * @throws \LogicException if the upload is already complete or aborted.
@@ -85,7 +84,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
     }
 
     /**
-     * Download the source asynchronously using multipart download operations.
+     * Upload the source asynchronously using multipart upload operations.
      *
      * @return PromiseInterface
      */
@@ -96,7 +95,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
         }
 
         return $this->promise = Promise\Coroutine::of(function () {
-            // Initiate the download.
+            // Initiate the upload.
             if ($this->state->isCompleted()) {
                 throw new \LogicException('This multipart upload has already '
                     . 'been completed or aborted.'
@@ -110,22 +109,25 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                 }
 
                 $result = (yield $this->execCommand('initiate', $this->getInitiateParams()));
-                $this->state->setDownloadId(
-                    $this->info['id']['download_id'],
-                    $result[$this->info['id']['download_id']]
+                $this->determineSourceSize($result['ContentLength']);
+                $this->setStreamPosArray($result['ContentLength']);
+                $this->state->setUploadId(
+                    $this->info['id']['upload_id'],
+                    $result[$this->info['id']['upload_id']]
                 );
+//                print_r($this->info);
                 $this->state->setStatus(DownloadState::INITIATED);
             }
 
-            // Create a command pool from a generator that yields DownloadPart
-            // commands for each downloda part.
+            // Create a command pool from a generator that yields UploadPart
+            // commands for each upload part.
             $resultHandler = $this->getResultHandler($errors);
             $commands = new CommandPool(
                 $this->client,
-                $this->getDownloadCommands($resultHandler),
+                $this->getUploadCommands($resultHandler),
                 [
                     'concurrency' => $this->config['concurrency'],
-                    'before'      => $this->config['before_download'],
+                    'before'      => $this->config['before_upload'],
                 ]
             );
 
@@ -135,8 +137,8 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                 throw new $this->config['exception_class']($this->state, $errors);
             }
 
-            // Complete the multipart download.
-            yield $this->execCommand('complete', $this->getCompleteParams());
+            // Complete the multipart upload.
+//            yield $this->execCommand('complete', $this->getCompleteParams());
             $this->state->setStatus(DownloadState::COMPLETED);
         })->otherwise($this->buildFailureCatch());
     }
@@ -169,17 +171,19 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
     }
 
     /**
-     * Provides service-specific information about the multipart download
+     * Provides service-specific information about the multipart upload
      * workflow.
      *
      * This array of data should include the keys: 'command', 'id', and 'part_num'.
      *
      * @return array
      */
-    abstract protected function loadDownloadWorkflowInfo();
+    abstract protected function loadUploadWorkflowInfo();
+
+    abstract protected function determineSourceSize($size);
 
     /**
-     * Determines the part size to use for download parts.
+     * Determines the part size to use for upload parts.
      *
      * Examines the provided partSize value and the source to determine the
      * best possible part size.
@@ -192,7 +196,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
 
     /**
      * Uses information from the Command and Result to determine which part was
-     * downloaded and mark it as downloaded in the download's state.
+     * uploaded and mark it as uploaded in the upload's state.
      *
      * @param CommandInterface $command
      * @param ResultInterface  $result
@@ -203,14 +207,14 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
     );
 
     /**
-     * Gets the service-specific parameters used to initiate the download.
+     * Gets the service-specific parameters used to initiate the upload.
      *
      * @return array
      */
     abstract protected function getInitiateParams();
 
     /**
-     * Gets the service-specific parameters used to complete the download.
+     * Gets the service-specific parameters used to complete the upload.
      *
      * @return array
      */
@@ -218,9 +222,9 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
 
     /**
      * Based on the config and service-specific workflow info, creates a
-     * `Promise` for an `DownloadState` object.
+     * `Promise` for an `UploadState` object.
      *
-     * @return PromiseInterface A `Promise` that resolves to an `DownloadState`.
+     * @return PromiseInterface A `Promise` that resolves to an `UploadState`.
      */
     private function determineState()
     {
@@ -231,8 +235,8 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
 
         // Otherwise, construct a new state from the provided identifiers.
         $required = $this->info['id'];
-        $id = [$required['download_id'] => null];
-        unset($required['download_id']);
+        $id = [$required['upload_id'] => null];
+        unset($required['upload_id']);
         foreach ($required as $key => $param) {
             if (!$this->config[$key]) {
                 throw new IAE('You must provide a value for "' . $key . '" in '
@@ -273,7 +277,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
     }
 
     /**
-     * Returns a middleware for processing responses of part download operations.
+     * Returns a middleware for processing responses of part upload operations.
      *
      * - Adds an onFulfilled callback that calls the service-specific
      *   handleResult method on the Result of the operation.
@@ -281,7 +285,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
      * - Has a passedByRef $errors arg that the exceptions get added to. The
      *   caller should use that &$errors array to do error handling.
      *
-     * @param array $errors Errors from download operations are added to this.
+     * @param array $errors Errors from upload operations are added to this.
      *
      * @return callable
      */
@@ -307,7 +311,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
     }
 
     /**
-     * Creates a generator that yields part data for the download's source.
+     * Creates a generator that yields part data for the upload's source.
      *
      * Yields associative arrays of parameters that are ultimately merged in
      * with others to form the complete parameters of a  command. This can
@@ -318,5 +322,5 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
      *
      * @return \Generator
      */
-    abstract protected function getDownloadCommands(callable $resultHandler);
+    abstract protected function getUploadCommands(callable $resultHandler);
 }
