@@ -88,7 +88,7 @@ class MultipartDownloader extends AbstractDownloader
     {
         return [
             'command' => [
-                'initiate' => 'HeadObject',
+                'initiate' => 'GetObject',
                 'upload'   => 'GetObject',
 //                'complete' => 'CompleteMultipartUpload',
             ],
@@ -101,7 +101,7 @@ class MultipartDownloader extends AbstractDownloader
         ];
     }
 
-    protected function createPart($partStartPos, $number)
+    protected function createPart($type, $number)
     {
         // Initialize the array of part data that will be returned.
         $data = [];
@@ -126,7 +126,11 @@ class MultipartDownloader extends AbstractDownloader
             echo 'ranges';
         }
 
-//        $data['PartNumber'] = $number;
+//        if (isset($config['partNumber'])) {
+//            $data['PartNumber'] = $config['partNumber'];
+//        }
+
+        $data['PartNumber'] = $number;
 
         if (isset($config['add_content_md5'])
             && $config['add_content_md5'] === true
@@ -150,7 +154,7 @@ class MultipartDownloader extends AbstractDownloader
             $this->streamPositionArray [$i]= $position;
             $position += $this->state->getPartSize();
         }
-        print_r($this->streamPositionArray);
+//        print_r($this->streamPositionArray);
     }
 
     protected function createDestStream($filePath)

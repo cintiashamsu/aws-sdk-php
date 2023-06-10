@@ -109,6 +109,9 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                 }
 
                 $result = (yield $this->execCommand('initiate', $this->getInitiateParams()));
+//                echo $result;
+//                echo $result['ContentRange'];
+                // if range or part config, end it here.
                 $this->determineSourceSize($result['ContentLength']);
                 $this->setStreamPositionArray($result['ContentLength']);
                 $this->state->setUploadId(
@@ -117,6 +120,10 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                 );
 //                print_r($this->info);
                 $this->state->setStatus(DownloadState::INITIATED);
+//                $this->getState()->markPartAsUploaded($command['PartNumber'], [
+//                    'PartNumber' => $command['PartNumber'],
+//                    'ETag'       => $this->extractETag($result),
+//                ]);
             }
 
             // Create a command pool from a generator that yields UploadPart

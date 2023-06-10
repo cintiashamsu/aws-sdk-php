@@ -112,10 +112,23 @@ trait MultipartDownloadingTrait
             $params['ACL'] = $config['acl'];
         }
 
-        // Set the ContentType if not already present
-//        if (empty($params['ContentType']) && $type = $this->getSourceMimeType()) {
-//            $params['ContentType'] = $type;
-//        }
+        if (isset($config['partnumber'])) {
+            $params['PartNumber'] = $config['partnumber'];
+            echo 'PartNumber';
+        } elseif (isset($config['range'])) {
+            $params['Range'] = $config['range'];
+            echo 'Range';
+        } elseif (isset($config['multipartdownloadtype']) && $config['multipartdownloadtype'] == 'Range') {
+            $params['Range'] = 'bytes=0-'.MultipartDownloader::PART_MIN_SIZE;
+            echo 'multipartdownloadtype';
+        } else {
+            $params['PartNumber'] = 1;
+            echo 'part num 1';
+        }
+
+//        $params['PartNumber'] = $config['partnumber'];
+
+//        $params['Range'] = 'bytes=0-1225';
 
         return $params;
     }

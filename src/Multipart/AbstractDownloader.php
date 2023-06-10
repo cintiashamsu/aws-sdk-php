@@ -22,44 +22,62 @@ abstract class AbstractDownloader extends AbstractDownloadManager
     public function __construct(Client $client, $source, array $config = [])
     {
 //        $this->source = $this->determineSource($source);
+        $this->config = $config;
         parent::__construct($client, $config);
     }
 
     protected function getUploadCommands(callable $resultHandler)
     {
-        // Determine if the source can be seeked.
-        for ($partNumber = 1; $this->isEof($this->position); $partNumber++) {
-            // If we haven't already uploaded this part, yield a new part.
-            if (!$this->state->hasPartBeenUploaded($partNumber)) {
-                $partStartPos = $this->position;
-                if (!($data = $this->createPart($partStartPos, $partNumber))) {
-                    break;
-                }
-                $command = $this->client->getCommand(
-                    $this->info['command']['upload'],
-                    $data + $this->state->getId()
-                );
-                $command->getHandlerList()->appendSign($resultHandler, 'mup');
-                $numberOfParts = $this->getNumberOfParts($this->state->getPartSize());
-                if (isset($numberOfParts) && $partNumber > $numberOfParts) {
-                    throw new $this->config['exception_class'](
-                        $this->state,
-                        new AwsException(
-                            "Maximum part number for this job exceeded, file has likely been corrupted." .
-                            "  Please restart this upload.",
-                            $command
-                        )
+        // partnumber - single object calls
+        if (isset($this->config['partnumber'])) {
+            $data = $this->createPart('partNumber', $this->config['partnumber']);
+            $command = $this->client->getCommand(
+                $this->info['command']['upload'],
+                $data + $this->state->getId()
+            );
+            $command->getHandlerList()->appendSign($resultHandler, 'mup');
+            yield $command;
+        } elseif (isset($this->config['range'])){ // range - single object calls
+            $data = $this->createPart($this->position, $this->config['partnumber']);
+            $command = $this->client->getCommand(
+                $this->info['command']['upload'],
+                $data + $this->state->getId()
+
+            );
+            $command->getHandlerList()->appendSign($resultHandler, 'mup');
+            yield $command;
+        } else { // multipart calls
+            // Determine if the source can be seeked.
+            for ($partNumber = 1; $this->isEof($this->position); $partNumber++) {
+                // If we haven't already uploaded this part, yield a new part.
+                if (!$this->state->hasPartBeenUploaded($partNumber)) {
+                    $partStartPos = $this->position;
+                    if (!($data = $this->createPart($partStartPos, $partNumber))) {
+                        break;
+                    }
+                    $command = $this->client->getCommand(
+                        $this->info['command']['upload'],
+                        $data + $this->state->getId()
                     );
+                    $command->getHandlerList()->appendSign($resultHandler, 'mup');
+                    $numberOfParts = $this->getNumberOfParts($this->state->getPartSize());
+                    if (isset($numberOfParts) && $partNumber > $numberOfParts) {
+                        throw new $this->config['exception_class'](
+                            $this->state,
+                            new AwsException(
+                                "Maximum part number for this job exceeded, file has likely been corrupted." .
+                                "  Please restart this upload.",
+                                $command
+                            )
+                        );
+                    }
+
+                    yield $command;
                 }
 
-                yield $command;
-//                if ($this->source->tell() > $partStartPos) {
-//                    continue;
-//                }
+                // Advance the source's offset if not already advanced.
+                $this->position += $this->state->getPartSize();
             }
-
-            // Advance the source's offset if not already advanced.
-            $this->position += $this->state->getPartSize();
         }
     }
 
@@ -98,7 +116,7 @@ abstract class AbstractDownloader extends AbstractDownloadManager
      */
     protected function determineSourceSize($size)
     {
-        echo 'abstract downloader size: ' . $size;
+//        echo 'abstract downloader size: ' . $size;
         $this->sourceSize = $size;
 //        $generator = function ($bytes) {
 //            for ($i = 0; $i < $bytes; $i++) {
