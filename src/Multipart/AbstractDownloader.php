@@ -28,29 +28,10 @@ abstract class AbstractDownloader extends AbstractDownloadManager
 
     protected function getUploadCommands(callable $resultHandler)
     {
-        // partnumber - single object calls
-        if (isset($this->config['partnumber'])) {
-            $data = $this->createPart('partNumber', $this->config['partnumber']);
-            $command = $this->client->getCommand(
-                $this->info['command']['upload'],
-                $data + $this->state->getId()
-            );
-            $command->getHandlerList()->appendSign($resultHandler, 'mup');
-            yield $command;
-        } elseif (isset($this->config['range'])){ // range - single object calls
-            $data = $this->createPart($this->position, $this->config['partnumber']);
-            $command = $this->client->getCommand(
-                $this->info['command']['upload'],
-                $data + $this->state->getId()
-
-            );
-            $command->getHandlerList()->appendSign($resultHandler, 'mup');
-            yield $command;
-        } else { // multipart calls
-            // Determine if the source can be seeked.
-            for ($partNumber = 1; $this->isEof($this->position); $partNumber++) {
-                // If we haven't already uploaded this part, yield a new part.
-                if (!$this->state->hasPartBeenUploaded($partNumber)) {
+        // Determine if the source can be seeked.
+        for ($partNumber = 1; $this->isEof($this->position); $partNumber++) {
+            // If we haven't already uploaded this part, yield a new part.
+            if (!$this->state->hasPartBeenUploaded($partNumber)) {
                     $partStartPos = $this->position;
                     if (!($data = $this->createPart($partStartPos, $partNumber))) {
                         break;
@@ -60,7 +41,7 @@ abstract class AbstractDownloader extends AbstractDownloadManager
                         $data + $this->state->getId()
                     );
                     $command->getHandlerList()->appendSign($resultHandler, 'mup');
-                    $numberOfParts = $this->getNumberOfParts($this->state->getPartSize());
+                    $numberOfParts = ($this->getNumberOfParts($this->state->getPartSize()));
                     if (isset($numberOfParts) && $partNumber > $numberOfParts) {
                         throw new $this->config['exception_class'](
                             $this->state,
@@ -78,7 +59,6 @@ abstract class AbstractDownloader extends AbstractDownloadManager
                 // Advance the source's offset if not already advanced.
                 $this->position += $this->state->getPartSize();
             }
-        }
     }
 
     /**
@@ -114,19 +94,11 @@ abstract class AbstractDownloader extends AbstractDownloadManager
      *
      * @return Stream
      */
-    protected function determineSourceSize($size)
+    protected function determineSourceSize($range)
     {
-//        echo 'abstract downloader size: ' . $size;
+        $size = substr($range, strpos($range, "/") + 1);
         $this->sourceSize = $size;
-//        $generator = function ($bytes) {
-//            for ($i = 0; $i < $bytes; $i++) {
-//                yield '.';
-//            }
-//        };
-//
-//        $iter = $generator($this->sourceSize);
-//        $stream = Psr7\Utils::streamFor($iter);
-//        $this->source = $stream;
+        $this->setStreamPositionArray($this->sourceSize);
     }
 
     protected function getNumberOfParts($partSize)

@@ -107,47 +107,49 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                 if (is_callable($this->config["prepare_data_source"])) {
                     $this->config["prepare_data_source"]();
                 }
-
-                $result = (yield $this->execCommand('initiate', $this->getInitiateParams()));
-//                echo $result;
-//                echo $result['ContentRange'];
+                $type = $this->getUploadType();
+                $result = (yield $this->execCommand('initiate', $this->getInitiateParams($type)));
                 // if range or part config, end it here.
-                $this->determineSourceSize($result['ContentLength']);
-                $this->setStreamPositionArray($result['ContentLength']);
+                $this->determineSourceSize($result['ContentRange']);
                 $this->state->setUploadId(
                     $this->info['id']['upload_id'],
                     $result[$this->info['id']['upload_id']]
                 );
-//                print_r($this->info);
                 $this->state->setStatus(DownloadState::INITIATED);
-//                $this->getState()->markPartAsUploaded($command['PartNumber'], [
-//                    'PartNumber' => $command['PartNumber'],
-//                    'ETag'       => $this->extractETag($result),
-//                ]);
+                if (isset($type['type'])){
+                    $this->handleResult(1, $result);
+                } else {
+                    $this->handleResult($type['configParam'], $result);
+                }
             }
 
-            // Create a command pool from a generator that yields UploadPart
-            // commands for each upload part.
-            $resultHandler = $this->getResultHandler($errors);
-            $commands = new CommandPool(
-                $this->client,
-                $this->getUploadCommands($resultHandler),
-                [
-                    'concurrency' => $this->config['concurrency'],
-                    'before'      => $this->config['before_upload'],
-                ]
-            );
+            if (isset($this->config['partnumber'])
+                or isset($this->config['range'])
+                or $result['PartsCount']==1){
+                $this->state->setStatus(DownloadState::COMPLETED);
+            } else {
+                // Create a command pool from a generator that yields UploadPart
+                // commands for each upload part.
+                $resultHandler = $this->getResultHandler($errors);
+                $commands = new CommandPool(
+                    $this->client,
+                    $this->getUploadCommands($resultHandler),
+                    [
+                        'concurrency' => $this->config['concurrency'],
+                        'before' => $this->config['before_upload'],
+                    ]
+                );
 
-            // Execute the pool of commands concurrently, and process errors.
-            yield $commands->promise();
-            if ($errors) {
-                throw new $this->config['exception_class']($this->state, $errors);
-            }
+                // Execute the pool of commands concurrently, and process errors.
+                yield $commands->promise();
+                if ($errors) {
+                    throw new $this->config['exception_class']($this->state, $errors);
+                }
 
-            // Complete the multipart upload.
+                // Complete the multipart upload.
 //            yield $this->execCommand('complete', $this->getCompleteParams());
-            $this->state->setStatus(DownloadState::COMPLETED);
-        })->otherwise($this->buildFailureCatch());
+                $this->state->setStatus(DownloadState::COMPLETED);
+            }})->otherwise($this->buildFailureCatch());
     }
 
     private function transformException($e)
@@ -218,7 +220,9 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
      *
      * @return array
      */
-    abstract protected function getInitiateParams();
+    abstract protected function getInitiateParams($type);
+
+    abstract protected function getUploadType();
 
     /**
      * Gets the service-specific parameters used to complete the upload.

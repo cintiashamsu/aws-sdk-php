@@ -50,21 +50,46 @@ trait MultipartDownloadingTrait
         return $state;
     }
 
-    protected function handleResult(CommandInterface $command, ResultInterface $result)
+    protected function handleResult($command, ResultInterface $result)
     {
-        $this->getState()->markPartAsUploaded($command['PartNumber'], [
-            'PartNumber' => $command['PartNumber'],
-            'ETag'       => $this->extractETag($result),
-        ]);
-
-        $this->writeDestStream($command['PartNumber'], $result['Body']);
+        if (is_numeric($command)) {
+            $this->getState()->markPartAsUploaded($command, [
+                'PartNumber' => $command,
+                'ETag' => $this->extractETag($result),
+            ]);
+            $this->writeDestStream(1, $result['Body']);
+        } elseif (isset($command['PartNumber'])) {
+            $this->getState()->markPartAsUploaded($command['PartNumber'], [
+                'PartNumber' => $command['PartNumber'],
+                'ETag' => $this->extractETag($result),
+            ]);
+            $this->writeDestStream($command['PartNumber'], $result['Body']);
+        } else {
+            if (is_string($command)){
+                $seek = substr($command, strpos($command, "=") + 1);
+            } else {
+                $seek = substr($command['Range'], strpos($command['Range'], "=") + 1);
+            }
+            $seek = (int)(strtok($seek, '-'));
+            $this->getState()->markPartAsUploaded($this->streamPositionArray[$seek], [
+                'PartNumber' => $this->streamPositionArray[$seek],
+                'ETag' => $this->extractETag($result),
+            ]);
+            $this->writeDestStream($seek, $result['Body']);
+        }
     }
 
     protected function writeDestStream($partNum, $body)
     {
-        $bodyStream = Psr7\Utils::streamFor($body);
-        $this->destStream->seek($this->streamPositionArray[$partNum]);
-        $this->destStream->write($bodyStream->read(5242880));
+//        echo "\n" . $body->getSize() . "\n";
+        if (isset($this->config['multipartdownloadtype'])  && $this->config['multipartdownloadtype'] == 'Range' or isset($command['Range'])) {
+            $this->destStream->seek($partNum);
+            $this->destStream->write($body->getContents());
+        } else {
+            $this->destStream->seek($this->streamPositionArray[$partNum]);
+            $this->destStream->write($body->getContents());
+        }
+        echo "\n" . $this->destStream->getSize() . "\n";
     }
 
     abstract protected function extractETag(ResultInterface $result);
@@ -103,7 +128,7 @@ trait MultipartDownloadingTrait
         return $partSize;
     }
 
-    protected function getInitiateParams()
+    protected function getInitiateParams($configType)
     {
         $config = $this->getConfig();
         $params = isset($config['params']) ? $config['params'] : [];
@@ -112,25 +137,30 @@ trait MultipartDownloadingTrait
             $params['ACL'] = $config['acl'];
         }
 
-        if (isset($config['partnumber'])) {
-            $params['PartNumber'] = $config['partnumber'];
-            echo 'PartNumber';
-        } elseif (isset($config['range'])) {
-            $params['Range'] = $config['range'];
-            echo 'Range';
-        } elseif (isset($config['multipartdownloadtype']) && $config['multipartdownloadtype'] == 'Range') {
-            $params['Range'] = 'bytes=0-'.MultipartDownloader::PART_MIN_SIZE;
-            echo 'multipartdownloadtype';
-        } else {
-            $params['PartNumber'] = 1;
-            echo 'part num 1';
-        }
-
-//        $params['PartNumber'] = $config['partnumber'];
-
-//        $params['Range'] = 'bytes=0-1225';
+        $params[$configType['config']] = $configType['configParam'];
 
         return $params;
+    }
+
+    protected function getUploadType()
+    {
+        $config = $this->getConfig();
+        if (isset($config['partnumber'])) {
+            return ['config' => 'PartNumber',
+                    'configParam' => $config['partnumber']];
+        } elseif (isset($config['range'])) {
+            return ['config' => 'Range',
+                    'configParam' => $config['range']];
+        } elseif (isset($config['multipartdownloadtype']) && $config['multipartdownloadtype'] == 'Range') {
+            return ['config' => 'Range',
+                    'configParam' => 'bytes=1-'.MultipartDownloader::PART_MIN_SIZE,
+                    'type' => 'multi'
+            ];
+        } else {
+            return ['config' => 'PartNumber',
+                    'configParam' => 1,
+                    'type' => 'multi'];
+        }
     }
 
 //    public function setStreamPosArray($sourceSize)

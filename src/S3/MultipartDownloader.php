@@ -66,17 +66,6 @@ class MultipartDownloader extends AbstractDownloader
         array $config = []
     ) {
         $this->destStream = $this->createDestStream($dest);
-//        if (isset($config['multipartDownloadType'])) {
-//            if ($config['multipartDownloadType'] == 'Part') {
-//                if (isset($config['Range'])) {
-//                    echo 'do something!!!';
-//                }
-//            } elseif ($config['multipartDownloadType'] == 'Range') {
-//                if (isset($config['Range'])) {
-//                    echo 'do something!!!';
-//                }
-//            }
-//        }
         parent::__construct($client, $dest, array_change_key_case($config) + [
                 'bucket' => null,
                 'key'    => null,
@@ -101,12 +90,10 @@ class MultipartDownloader extends AbstractDownloader
         ];
     }
 
-    protected function createPart($type, $number)
+    protected function createPart($partStartPos, $number)
     {
         // Initialize the array of part data that will be returned.
         $data = [];
-
-//        echo 'create part position: ' . $partStartPos;
 
         // Apply custom params to UploadPart data
         $config = $this->getConfig();
@@ -115,22 +102,20 @@ class MultipartDownloader extends AbstractDownloader
             $data[$k] = $v;
         }
 
-        if (isset($config['multipartdownloadtype'])
-            && $config['multipartdownloadtype'] === 'Part') {
-            $data['PartNumber'] = $number;
-            echo 'parts';
-        } elseif (isset($config['multipartdownloadtype'])
-            && $config['multipartdownloadtype'] === 'Range') {
-            $partEndPos = $partStartPos+self::PART_MIN_SIZE;
-            $data['Range'] = 'bytes='.$partStartPos.'-'.$partEndPos;
-            echo 'ranges';
-        }
-
-//        if (isset($config['partNumber'])) {
-//            $data['PartNumber'] = $config['partNumber'];
+//        } elseif (isset($config['multipartdownloadtype'])
+//            && $config['multipartdownloadtype'] === 'Range') {
+//            $partEndPos = $partStartPos+self::PART_MIN_SIZE;
+//            $data['Range'] = 'bytes='.$partStartPos.'-'.$partEndPos;
+//            echo 'ranges';
 //        }
 
-        $data['PartNumber'] = $number;
+
+        if (isset($this->config['range']) or isset($this->config['multipartdownloadtype']) && $this->config['multipartdownloadtype'] == 'Range'){
+            $partEndPos = $partStartPos+self::PART_MIN_SIZE;
+            $data['Range'] = 'bytes='.$partStartPos.'-'.$partEndPos;
+        } else {
+            $data['PartNumber'] = $number;
+        }
 
         if (isset($config['add_content_md5'])
             && $config['add_content_md5'] === true
@@ -150,11 +135,23 @@ class MultipartDownloader extends AbstractDownloader
     {
         $parts = ceil($sourceSize/$this->state->getPartSize());
         $position = 0;
-        for ($i=1;$i<=$parts;$i++) {
-            $this->streamPositionArray [$i]= $position;
-            $position += $this->state->getPartSize();
+        if (isset($this->config['range']) or (isset($this->config['multipartdownloadtype']) && $this->config['multipartdownloadtype'] == 'Range')) {
+            for ($i = 1; $i <= $parts; $i++) {
+                $this->streamPositionArray [$position] = $i;
+                $position += $this->state->getPartSize();
+            }
+        } else {
+            for ($i = 1; $i <= $parts; $i++) {
+                $this->streamPositionArray [$i] = $position;
+                $position += $this->state->getPartSize();
+            }
         }
-//        print_r($this->streamPositionArray);
+//        for ($i = 1; $i <= $parts; $i++) {
+//            $this->streamPositionArray [$position] = $i;
+//            $position += $this->state->getPartSize();
+//        }
+
+        print_r($this->streamPositionArray);
     }
 
     protected function createDestStream($filePath)

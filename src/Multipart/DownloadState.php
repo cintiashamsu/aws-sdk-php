@@ -80,7 +80,7 @@ class DownloadState
     /**
      * Marks a part as being uploaded.
      *
-     * @param int   $partNumber The part number.
+     * @param string   $partNumber The part number.
      * @param array $partData   Data from the upload operation that needs to be
      *                          recalled during the complete operation.
      */
