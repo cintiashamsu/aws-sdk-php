@@ -102,14 +102,6 @@ class MultipartDownloader extends AbstractDownloader
             $data[$k] = $v;
         }
 
-//        } elseif (isset($config['multipartdownloadtype'])
-//            && $config['multipartdownloadtype'] === 'Range') {
-//            $partEndPos = $partStartPos+self::PART_MIN_SIZE;
-//            $data['Range'] = 'bytes='.$partStartPos.'-'.$partEndPos;
-//            echo 'ranges';
-//        }
-
-
         if (isset($this->config['range']) or isset($this->config['multipartdownloadtype']) && $this->config['multipartdownloadtype'] == 'Range'){
             $partEndPos = $partStartPos+self::PART_MIN_SIZE;
             $data['Range'] = 'bytes='.$partStartPos.'-'.$partEndPos;
@@ -146,12 +138,6 @@ class MultipartDownloader extends AbstractDownloader
                 $position += $this->state->getPartSize();
             }
         }
-//        for ($i = 1; $i <= $parts; $i++) {
-//            $this->streamPositionArray [$position] = $i;
-//            $position += $this->state->getPartSize();
-//        }
-
-        print_r($this->streamPositionArray);
     }
 
     protected function createDestStream($filePath)

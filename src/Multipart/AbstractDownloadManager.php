@@ -109,7 +109,6 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                 }
                 $type = $this->getUploadType();
                 $result = (yield $this->execCommand('initiate', $this->getInitiateParams($type)));
-                // if range or part config, end it here.
                 $this->determineSourceSize($result['ContentRange']);
                 $this->state->setUploadId(
                     $this->info['id']['upload_id'],
@@ -122,7 +121,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                     $this->handleResult($type['configParam'], $result);
                 }
             }
-
+            // end download if PartNumber or Range is set, or object is only one part total.
             if (isset($this->config['partnumber'])
                 or isset($this->config['range'])
                 or $result['PartsCount']==1){

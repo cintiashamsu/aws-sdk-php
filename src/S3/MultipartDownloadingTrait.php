@@ -52,44 +52,36 @@ trait MultipartDownloadingTrait
 
     protected function handleResult($command, ResultInterface $result)
     {
-        if (is_numeric($command)) {
-            $this->getState()->markPartAsUploaded($command, [
-                'PartNumber' => $command,
+        if (!($command instanceof CommandInterface)){
+            // single downloads - part/range
+            $this->getState()->markPartAsUploaded(1, [
+                'PartNumber' => 1,
                 'ETag' => $this->extractETag($result),
             ]);
-            $this->writeDestStream(1, $result['Body']);
-        } elseif (isset($command['PartNumber'])) {
-            $this->getState()->markPartAsUploaded($command['PartNumber'], [
-                'PartNumber' => $command['PartNumber'],
-                'ETag' => $this->extractETag($result),
-            ]);
-            $this->writeDestStream($command['PartNumber'], $result['Body']);
-        } else {
-            if (is_string($command)){
-                $seek = substr($command, strpos($command, "=") + 1);
-            } else {
-                $seek = substr($command['Range'], strpos($command['Range'], "=") + 1);
-            }
+            $this->writeDestStream(0, $result['Body']);
+        } elseif (!(isset($command['PartNumber']))) {
+            // multi downloads - range
+            $seek = substr($command['Range'], strpos($command['Range'], "=") + 1);
             $seek = (int)(strtok($seek, '-'));
             $this->getState()->markPartAsUploaded($this->streamPositionArray[$seek], [
                 'PartNumber' => $this->streamPositionArray[$seek],
                 'ETag' => $this->extractETag($result),
             ]);
             $this->writeDestStream($seek, $result['Body']);
+        } else {
+            // multi downloads - part
+            $this->getState()->markPartAsUploaded($command['PartNumber'], [
+                'PartNumber' => $command['PartNumber'],
+                'ETag' => $this->extractETag($result),
+            ]);
+            $this->writeDestStream($this->streamPositionArray[$command['PartNumber']], $result['Body']);
         }
     }
 
     protected function writeDestStream($partNum, $body)
     {
-//        echo "\n" . $body->getSize() . "\n";
-        if (isset($this->config['multipartdownloadtype'])  && $this->config['multipartdownloadtype'] == 'Range' or isset($command['Range'])) {
-            $this->destStream->seek($partNum);
-            $this->destStream->write($body->getContents());
-        } else {
-            $this->destStream->seek($this->streamPositionArray[$partNum]);
-            $this->destStream->write($body->getContents());
-        }
-        echo "\n" . $this->destStream->getSize() . "\n";
+        $this->destStream->seek($partNum);
+        $this->destStream->write($body->getContents());
     }
 
     abstract protected function extractETag(ResultInterface $result);
@@ -153,7 +145,7 @@ trait MultipartDownloadingTrait
                     'configParam' => $config['range']];
         } elseif (isset($config['multipartdownloadtype']) && $config['multipartdownloadtype'] == 'Range') {
             return ['config' => 'Range',
-                    'configParam' => 'bytes=1-'.MultipartDownloader::PART_MIN_SIZE,
+                    'configParam' => 'bytes=0-'.MultipartDownloader::PART_MIN_SIZE,
                     'type' => 'multi'
             ];
         } else {
