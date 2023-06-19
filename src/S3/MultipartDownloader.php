@@ -20,6 +20,9 @@ class MultipartDownloader extends AbstractDownloader
     const PART_MAX_SIZE = 5368709120;
     const PART_MAX_NUM = 10000;
 
+    public $destStream;
+    public $streamPositionArray;
+
     /**
      * Creates a multipart download for an S3 object.
      *
@@ -102,7 +105,10 @@ class MultipartDownloader extends AbstractDownloader
             $data[$k] = $v;
         }
 
-        if (isset($this->config['range']) or isset($this->config['multipartdownloadtype']) && $this->config['multipartdownloadtype'] == 'Range'){
+        // Set Range or PartNumber params
+        if (isset($this->config['range']) or
+            isset($this->config['multipartdownloadtype'])
+            && $this->config['multipartdownloadtype'] == 'Range'){
             $partEndPos = $partStartPos+self::PART_MIN_SIZE;
             $data['Range'] = 'bytes='.$partStartPos.'-'.$partEndPos;
         } else {
@@ -127,7 +133,9 @@ class MultipartDownloader extends AbstractDownloader
     {
         $parts = ceil($sourceSize/$this->state->getPartSize());
         $position = 0;
-        if (isset($this->config['range']) or (isset($this->config['multipartdownloadtype']) && $this->config['multipartdownloadtype'] == 'Range')) {
+        if (isset($this->config['range']) or
+            (isset($this->config['multipartdownloadtype']) &&
+                $this->config['multipartdownloadtype'] == 'Range')) {
             for ($i = 1; $i <= $parts; $i++) {
                 $this->streamPositionArray [$position] = $i;
                 $position += $this->state->getPartSize();

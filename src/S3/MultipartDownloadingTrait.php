@@ -38,7 +38,7 @@ trait MultipartDownloadingTrait
             }
             // Mark all the parts returned by ListParts as uploaded.
             foreach ($result['Parts'] as $part) {
-                $state->markPartAsUploaded($part['PartNumber'], [
+                $state->markPartAsDownloaded($part['PartNumber'], [
                     'PartNumber' => $part['PartNumber'],
                     'ETag'       => $part['ETag']
                 ]);
@@ -54,7 +54,7 @@ trait MultipartDownloadingTrait
     {
         if (!($command instanceof CommandInterface)){
             // single downloads - part/range
-            $this->getState()->markPartAsUploaded(1, [
+            $this->getState()->markPartAsDownloaded(1, [
                 'PartNumber' => 1,
                 'ETag' => $this->extractETag($result),
             ]);
@@ -63,14 +63,14 @@ trait MultipartDownloadingTrait
             // multi downloads - range
             $seek = substr($command['Range'], strpos($command['Range'], "=") + 1);
             $seek = (int)(strtok($seek, '-'));
-            $this->getState()->markPartAsUploaded($this->streamPositionArray[$seek], [
+            $this->getState()->markPartAsDownloaded($this->streamPositionArray[$seek], [
                 'PartNumber' => $this->streamPositionArray[$seek],
                 'ETag' => $this->extractETag($result),
             ]);
             $this->writeDestStream($seek, $result['Body']);
         } else {
             // multi downloads - part
-            $this->getState()->markPartAsUploaded($command['PartNumber'], [
+            $this->getState()->markPartAsDownloaded($command['PartNumber'], [
                 'PartNumber' => $command['PartNumber'],
                 'ETag' => $this->extractETag($result),
             ]);
@@ -78,9 +78,9 @@ trait MultipartDownloadingTrait
         }
     }
 
-    protected function writeDestStream($partNum, $body)
+    protected function writeDestStream($position, $body)
     {
-        $this->destStream->seek($partNum);
+        $this->destStream->seek($position);
         $this->destStream->write($body->getContents());
     }
 
@@ -92,7 +92,7 @@ trait MultipartDownloadingTrait
         $params = isset($config['params']) ? $config['params'] : [];
 
         $params['MultipartUpload'] = [
-            'Parts' => $this->getState()->getUploadedParts()
+            'Parts' => $this->getState()->getDownloadedParts()
         ];
 
         return $params;
@@ -146,12 +146,12 @@ trait MultipartDownloadingTrait
         } elseif (isset($config['multipartdownloadtype']) && $config['multipartdownloadtype'] == 'Range') {
             return ['config' => 'Range',
                     'configParam' => 'bytes=0-'.MultipartDownloader::PART_MIN_SIZE,
-                    'type' => 'multi'
+                    'multipart' => 'yes'
             ];
         } else {
             return ['config' => 'PartNumber',
                     'configParam' => 1,
-                    'type' => 'multi'];
+                    'multipart' => 'yes'];
         }
     }
 

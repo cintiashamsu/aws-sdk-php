@@ -115,7 +115,7 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                     $result[$this->info['id']['upload_id']]
                 );
                 $this->state->setStatus(DownloadState::INITIATED);
-                if (isset($type['type'])){
+                if (isset($type['multipart'])){
                     $this->handleResult(1, $result);
                 } else {
                     $this->handleResult($type['configParam'], $result);

@@ -20,7 +20,7 @@ class DownloadState
     private $partSize;
 
     /** @var array Parts that have been uploaded. */
-    private $uploadedParts = [];
+    private $downloadedParts = [];
 
     /** @var int Identifies the status the upload. */
     private $status = self::CREATED;
@@ -84,9 +84,9 @@ class DownloadState
      * @param array $partData   Data from the upload operation that needs to be
      *                          recalled during the complete operation.
      */
-    public function markPartAsUploaded($partNumber, array $partData = [])
+    public function markPartAsDownloaded($partNumber, array $partData = [])
     {
-        $this->uploadedParts[$partNumber] = $partData;
+        $this->downloadedParts[$partNumber] = $partData;
     }
 
     /**
@@ -98,7 +98,7 @@ class DownloadState
      */
     public function hasPartBeenUploaded($partNumber)
     {
-        return isset($this->uploadedParts[$partNumber]);
+        return isset($this->downloadedParts[$partNumber]);
     }
 
     /**
@@ -106,10 +106,10 @@ class DownloadState
      *
      * @return array
      */
-    public function getUploadedParts()
+    public function getDownloadedParts()
     {
-        ksort($this->uploadedParts);
-        return $this->uploadedParts;
+        ksort($this->downloadedParts);
+        return $this->downloadedParts;
     }
 
     /**
