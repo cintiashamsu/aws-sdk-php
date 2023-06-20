@@ -18,7 +18,6 @@ class MultipartDownloader extends AbstractDownloader
 
     const PART_MIN_SIZE = 5242880;
     const PART_MAX_SIZE = 5368709120;
-    const PART_MAX_NUM = 10000;
 
     public $destStream;
     public $streamPositionArray;
@@ -28,40 +27,40 @@ class MultipartDownloader extends AbstractDownloader
      *
      * The valid configuration options are as follows:
      *
-     * - acl: (string) ACL to set on the object being download. Objects are
+     * - acl: (string) ACL to set on the object being downloaded. Objects are
      *   private by default.
      * - before_complete: (callable) Callback to invoke before the
-     *   `CompleteMultipartUpload` operation. The callback should have a
+     *   `GetObject` operation. The callback should have a
      *   function signature like `function (Aws\Command $command) {...}`.
      * - before_initiate: (callable) Callback to invoke before the
-     *   `CreateMultipartUpload` operation. The callback should have a function
+     *   `GetObject` operation. The callback should have a function
      *   signature like `function (Aws\Command $command) {...}`.
-     * - before_upload: (callable) Callback to invoke before any `UploadPart`
+     * - before_download: (callable) Callback to invoke before any `DownloadPart`
      *   operations. The callback should have a function signature like
      *   `function (Aws\Command $command) {...}`.
      * - bucket: (string, required) Name of the bucket to which the object is
-     *   being uploaded, or an S3 access point ARN.
+     *   being downloaded, or an S3 access point ARN.
      * - concurrency: (int, default=int(5)) Maximum number of concurrent
-     *   `UploadPart` operations allowed during the multipart upload.
-     * - key: (string, required) Key to use for the object being uploaded.
+     *   `DownloadPart` operations allowed during the multipart download.
+     * - key: (string, required) Key to use for the object being download.
      * - params: (array) An array of key/value parameters that will be applied
-     *   to each of the sub-commands run by the uploader as a base.
+     *   to each of the sub-commands run by the downloader as a base.
      *   Auto-calculated options will override these parameters. If you need
      *   more granularity over parameters to each sub-command, use the before_*
      *   options detailed above to update the commands directly.
      * - part_size: (int, default=int(5242880)) Part size, in bytes, to use when
-     *   doing a multipart upload. This must between 5 MB and 5 GB, inclusive.
+     *   doing a multipart download. This must between 5 MB and 5 GB, inclusive.
      * - prepare_data_source: (callable) Callback to invoke before starting the
-     *   multipart upload workflow. The callback should have a function
+     *   multipart downloaded workflow. The callback should have a function
      *   signature like `function () {...}`.
-     * - state: (Aws\Multipart\UploadState) An object that represents the state
-     *   of the multipart upload and that is used to resume a previous upload.
+     * - state: (Aws\Multipart\DownloadState) An object that represents the state
+     *   of the multipart download and that is used to resume a previous download.
      *   When this option is provided, the `bucket`, `key`, and `part_size`
      *   options are ignored.
      *
-     * @param S3ClientInterface $client Client used for the upload.
-     * @param mixed             $dest Destination for data to download.
-     * @param array             $config Configuration used to perform the upload.
+     * @param S3ClientInterface $client Client used for the download.
+     * @param string            $dest Destination for data to download.
+     * @param array             $config Configuration used to perform the download.
      */
     public function __construct(
         S3ClientInterface $client,
@@ -76,31 +75,30 @@ class MultipartDownloader extends AbstractDownloader
             ]);
     }
 
-    protected function loadUploadWorkflowInfo()
+    protected function loadDownloadWorkflowInfo()
     {
         return [
             'command' => [
                 'initiate' => 'GetObject',
-                'upload'   => 'GetObject',
-//                'complete' => 'CompleteMultipartUpload',
+                'download'   => 'GetObject'
             ],
             'id' => [
                 'bucket'    => 'Bucket',
                 'key'       => 'Key',
-                'upload_id' => 'UploadId',
+                'download_id' => 'DownloadId',
             ],
             'part_num' => 'PartNumber',
         ];
     }
 
-    protected function createPart($partStartPos, $number)
+    protected function createPart($partStartPosition, $number)
     {
         // Initialize the array of part data that will be returned.
         $data = [];
 
-        // Apply custom params to UploadPart data
+        // Apply custom params to DownloadPart data
         $config = $this->getConfig();
-        $params = isset($config['params']) ? $config['params'] : [];
+        $params = $config['params'] ?? [];
         foreach ($params as $k => $v) {
             $data[$k] = $v;
         }
@@ -109,8 +107,8 @@ class MultipartDownloader extends AbstractDownloader
         if (isset($this->config['range']) or
             isset($this->config['multipartdownloadtype'])
             && $this->config['multipartdownloadtype'] == 'Range'){
-            $partEndPos = $partStartPos+self::PART_MIN_SIZE;
-            $data['Range'] = 'bytes='.$partStartPos.'-'.$partEndPos;
+            $partEndPosition = $partStartPosition+$this->state->getPartSize();
+            $data['Range'] = 'bytes='.$partStartPosition.'-'.$partEndPosition;
         } else {
             $data['PartNumber'] = $number;
         }
@@ -129,9 +127,13 @@ class MultipartDownloader extends AbstractDownloader
         return $result['ETag'];
     }
 
-    public function setStreamPositionArray($sourceSize)
+    /**
+     * Sets streamPositionArray with information on beginning of each part,
+     * depending on config.
+     */
+    public function setStreamPositionArray()
     {
-        $parts = ceil($sourceSize/$this->state->getPartSize());
+        $parts = ceil($this->sourceSize/$this->state->getPartSize());
         $position = 0;
         if (isset($this->config['range']) or
             (isset($this->config['multipartdownloadtype']) &&
@@ -148,6 +150,13 @@ class MultipartDownloader extends AbstractDownloader
         }
     }
 
+    /**
+     * Turns the provided destination into a writable stream and stores it.
+     *
+     * @param string $filePath Destination to turn into stream.
+     *
+     * @return Psr7\LazyOpenStream
+     */
     protected function createDestStream($filePath)
     {
         return new Psr7\LazyOpenStream($filePath, 'w');

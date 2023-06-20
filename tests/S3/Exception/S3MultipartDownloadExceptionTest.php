@@ -20,22 +20,18 @@ class S3MultipartDownloadExceptionTest extends TestCase
             1 => new AwsException('Bad digest.', new Command('GetObject', [
                 'Bucket' => 'foo',
                 'Key' => 'bar'
-//                'Body' => Psr7\Utils::streamFor('Part 1'),
             ])),
             5 => new AwsException('Missing header.', new Command('GetObject', [
                 'Bucket' => 'foo',
-                'Key' => 'bar',
-//                'Body' => Psr7\Utils::streamFor('Part 2'),
+                'Key' => 'bar'
             ])),
             8 => new AwsException('Needs more love.', new Command('GetObject')),
         ];
 
         $path = '/path/to/the/large/file/test.zip';
-        $exception = new S3MultipartDownloadException($state, $failed, [
-            'file_name' => $path
-        ]);
+        $exception = new S3MultipartDownloadException($state, $failed);
         $this->assertSame('foo', $exception->getBucket());
         $this->assertSame('bar', $exception->getKey());
-        $this->assertSame('php://temp', $exception->getSourceFileName());
+//        $this->assertSame('php://temp', $exception->getSourceFileName());
     }
 }

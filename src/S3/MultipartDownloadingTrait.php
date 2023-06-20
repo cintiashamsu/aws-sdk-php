@@ -9,13 +9,13 @@ use GuzzleHttp\Psr7;
 trait MultipartDownloadingTrait
 {
     /**
-     * Creates an UploadState object for a multipart upload by querying the
-     * service for the specified upload's information.
+     * Creates a DownloadState object for a multipart download by querying the
+     * service for the specified download's information.
      *
-     * @param S3ClientInterface $client   S3Client used for the upload.
-     * @param string            $bucket   Bucket for the multipart upload.
-     * @param string            $key      Object key for the multipart upload.
-     * @param string            $uploadId Upload ID for the multipart upload.
+     * @param S3ClientInterface $client   S3Client used for the download.
+     * @param string            $bucket   Bucket for the multipart download.
+     * @param string            $key      Object key for the multipart download.
+     * @param string            $downloadId Download ID for the multipart download.
      *
      * @return DownloadState
      */
@@ -23,12 +23,12 @@ trait MultipartDownloadingTrait
         S3ClientInterface $client,
                           $bucket,
                           $key,
-                          $uploadId
+                          $downloadId
     ) {
         $state = new DownloadState([
             'Bucket'   => $bucket,
             'Key'      => $key,
-            'UploadId' => $uploadId,
+            'DownloadId' => $downloadId,
         ]);
 
         foreach ($client->getPaginator('ListParts', $state->getId()) as $result) {
@@ -36,7 +36,7 @@ trait MultipartDownloadingTrait
             if (!$state->getPartSize()) {
                 $state->setPartSize($result->search('Parts[0].Size'));
             }
-            // Mark all the parts returned by ListParts as uploaded.
+            // Mark all the parts returned by ListParts as downloaded.
             foreach ($result['Parts'] as $part) {
                 $state->markPartAsDownloaded($part['PartNumber'], [
                     'PartNumber' => $part['PartNumber'],
@@ -46,36 +46,32 @@ trait MultipartDownloadingTrait
         }
 
         $state->setStatus(DownloadState::INITIATED);
-
         return $state;
     }
 
     protected function handleResult($command, ResultInterface $result)
     {
         if (!($command instanceof CommandInterface)){
-            // single downloads - part/range
-            $this->getState()->markPartAsDownloaded(1, [
-                'PartNumber' => 1,
-                'ETag' => $this->extractETag($result),
-            ]);
-            $this->writeDestStream(0, $result['Body']);
+            // single part downloads - part and range
+            $partNumber = 1;
+            $position = 0;
         } elseif (!(isset($command['PartNumber']))) {
-            // multi downloads - range
+            // multipart downloads - range
             $seek = substr($command['Range'], strpos($command['Range'], "=") + 1);
             $seek = (int)(strtok($seek, '-'));
-            $this->getState()->markPartAsDownloaded($this->streamPositionArray[$seek], [
-                'PartNumber' => $this->streamPositionArray[$seek],
-                'ETag' => $this->extractETag($result),
-            ]);
-            $this->writeDestStream($seek, $result['Body']);
+            $partNumber = $this->streamPositionArray[$seek];
+            $position = $seek;
         } else {
-            // multi downloads - part
-            $this->getState()->markPartAsDownloaded($command['PartNumber'], [
-                'PartNumber' => $command['PartNumber'],
-                'ETag' => $this->extractETag($result),
-            ]);
-            $this->writeDestStream($this->streamPositionArray[$command['PartNumber']], $result['Body']);
+            // multipart downloads - part
+            $partNumber = $command['PartNumber'];
+            $position = $this->streamPositionArray[$command['PartNumber']];
         }
+
+        $this->getState()->markPartAsDownloaded($partNumber, [
+            'PartNumber' => $partNumber,
+            'ETag' => $this->extractETag($result),
+        ]);
+        $this->writeDestStream($position, $result['Body']);
     }
 
     protected function writeDestStream($position, $body)
@@ -86,30 +82,10 @@ trait MultipartDownloadingTrait
 
     abstract protected function extractETag(ResultInterface $result);
 
-    protected function getCompleteParams()
-    {
-        $config = $this->getConfig();
-        $params = isset($config['params']) ? $config['params'] : [];
-
-        $params['MultipartUpload'] = [
-            'Parts' => $this->getState()->getDownloadedParts()
-        ];
-
-        return $params;
-    }
-
     protected function determinePartSize()
     {
         // Make sure the part size is set.
         $partSize = $this->getConfig()['part_size'] ?: MultipartDownloader::PART_MIN_SIZE;
-
-        // Adjust the part size to be larger for known, x-large uploads.
-//        if ($sourceSize = $this->getSourceSize()) {
-//            $partSize = (int) max(
-//                $partSize,
-//                ceil($sourceSize / MultipartDownloader::PART_MAX_NUM)
-//            );
-//        }
 
         // Ensure that the part size follows the rules: 5 MB <= size <= 5 GB.
         if ($partSize < MultipartDownloader::PART_MIN_SIZE || $partSize > MultipartDownloader::PART_MAX_SIZE) {
@@ -123,7 +99,7 @@ trait MultipartDownloadingTrait
     protected function getInitiateParams($configType)
     {
         $config = $this->getConfig();
-        $params = isset($config['params']) ? $config['params'] : [];
+        $params = $config['params'] ?? [];
 
         if (isset($config['acl'])) {
             $params['ACL'] = $config['acl'];
@@ -134,7 +110,7 @@ trait MultipartDownloadingTrait
         return $params;
     }
 
-    protected function getUploadType()
+    protected function getDownloadType()
     {
         $config = $this->getConfig();
         if (isset($config['partnumber'])) {
@@ -155,19 +131,8 @@ trait MultipartDownloadingTrait
         }
     }
 
-//    public function setStreamPosArray($sourceSize)
-//    {
-//        $parts = ceil($sourceSize/$this->partSize);
-//        $position = 0;
-//        for ($i=1;$i<=$parts;$i++) {
-//            $this->StreamPosArray []= $position;
-//            $position += $this->partSize;
-//        }
-//        print_r($this->streamPositionArray);
-//    }
-
     /**
-     * @return UploadState
+     * @return DownloadState
      */
     abstract protected function getState();
 

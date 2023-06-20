@@ -9,35 +9,38 @@ use Psr\Http\Message\StreamInterface as Stream;
 
 abstract class AbstractDownloader extends AbstractDownloadManager
 {
-    /** @var Stream Source of the data to be uploaded. */
+    /** @var Stream Source of the data to be downloaded. */
     protected $source;
 
-    protected $position = 0;
+    /** @var Numeric Current position to track beginning of part. */
+    protected $partPosition = 0;
+
+    /** @var int Size of source. */
+    protected $sourceSize;
 
     /**
      * @param Client $client
-     * @param mixed  $source
+     * @param mixed  $dest
      * @param array  $config
      */
-    public function __construct(Client $client, $source, array $config = [])
+    public function __construct(Client $client, $dest, array $config = [])
     {
-//        $this->source = $this->determineSource($source);
         $this->config = $config;
         parent::__construct($client, $config);
     }
 
-    protected function getUploadCommands(callable $resultHandler)
+    protected function getDownloadCommands(callable $resultHandler)
     {
         // Determine if the source can be seeked.
-        for ($partNumber = 1; $this->isEof($this->position); $partNumber++) {
-            // If we haven't already uploaded this part, yield a new part.
-            if (!$this->state->hasPartBeenUploaded($partNumber)) {
-                    $partStartPos = $this->position;
-                    if (!($data = $this->createPart($partStartPos, $partNumber))) {
+        for ($partNumber = 1; $this->isEof($this->partPosition); $partNumber++) {
+            // If we haven't already downloaded this part, yield a new part.
+            if (!$this->state->hasPartBeenDownloaded($partNumber)) {
+                    $partStartPosition = $this->partPosition;
+                    if (!($data = $this->createPart($partStartPosition, $partNumber))) {
                         break;
                     }
                     $command = $this->client->getCommand(
-                        $this->info['command']['upload'],
+                        $this->info['command']['download'],
                         $data + $this->state->getId()
                     );
                     $command->getHandlerList()->appendSign($resultHandler, 'mup');
@@ -52,30 +55,28 @@ abstract class AbstractDownloader extends AbstractDownloadManager
                             )
                         );
                     }
-
                     yield $command;
                 }
-
                 // Advance the source's offset if not already advanced.
-                $this->position += $this->state->getPartSize();
+                $this->partPosition += $this->state->getPartSize();
             }
     }
 
     /**
-     * Generates the parameters for an upload part by analyzing a range of the
+     * Generates the parameters for a download part by analyzing a range of the
      * source starting from the current offset up to the part size.
      *
-     * @param bool $seekable
-     * @param int  $number
+     * @param numeric $partStartPosition
+     * @param int  $partNumber
      *
      * @return array|null
      */
-    abstract protected function createPart($seekable, $number);
+    abstract protected function createPart($partStartPosition, $partNumber);
 
     /**
      * Checks if the source is at EOF.
      *
-     * @param bool $seekable
+     * @param numeric $position
      *
      * @return bool
      */
@@ -85,22 +86,24 @@ abstract class AbstractDownloader extends AbstractDownloadManager
     }
 
     /**
-     * Turns the provided source into a stream and stores it.
+     * Determines and sets size of the source.
      *
-     * If a string is provided, it is assumed to be a filename, otherwise, it
-     * passes the value directly to `Psr7\Utils::streamFor()`.
+     * @param mixed $range
      *
-     * @param mixed $source
-     *
-     * @return Stream
      */
     protected function determineSourceSize($range)
     {
         $size = substr($range, strpos($range, "/") + 1);
         $this->sourceSize = $size;
-        $this->setStreamPositionArray($this->sourceSize);
     }
 
+    /**
+     * Determines and sets number of parts.
+     *
+     * @param numeric $partSize
+     *
+     * @return float|null
+     */
     protected function getNumberOfParts($partSize)
     {
         if ($this->sourceSize) {

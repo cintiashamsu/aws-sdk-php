@@ -2,10 +2,10 @@
 namespace Aws\Multipart;
 
 /**
- * Representation of the multipart upload.
+ * Representation of the multipart download.
  *
- * This object keeps track of the state of the upload, including the status and
- * which parts have been uploaded.
+ * This object keeps track of the state of the download, including the status and
+ * which parts have been downloaded.
  */
 class DownloadState
 {
@@ -13,20 +13,20 @@ class DownloadState
     const INITIATED = 1;
     const COMPLETED = 2;
 
-    /** @var array Params used to identity the upload. */
+    /** @var array Params used to identity the download. */
     private $id;
 
-    /** @var int Part size being used by the upload. */
+    /** @var int Part size being used by the download. */
     private $partSize;
 
-    /** @var array Parts that have been uploaded. */
+    /** @var array Parts that have been downloaded. */
     private $downloadedParts = [];
 
-    /** @var int Identifies the status the upload. */
+    /** @var int Identifies the status the download. */
     private $status = self::CREATED;
 
     /**
-     * @param array $id Params used to identity the upload.
+     * @param array $id Params used to identity the download.
      */
     public function __construct(array $id)
     {
@@ -34,8 +34,8 @@ class DownloadState
     }
 
     /**
-     * Get the upload's ID, which is a tuple of parameters that can uniquely
-     * identify the upload.
+     * Get the download's ID, which is a tuple of parameters that can uniquely
+     * identify the download.
      *
      * @return array
      */
@@ -45,15 +45,14 @@ class DownloadState
     }
 
     /**
-     * Set's the "upload_id", or 3rd part of the upload's ID. This typically
-     * only needs to be done after initiating an upload.
+     * Set's the "download_id", or 3rd part of the download's ID. This typically
+     * only needs to be done after initiating a download.
      *
-     * @param string $key   The param key of the upload_id.
-     * @param string $value The param value of the upload_id.
+     * @param string $key   The param key of the download_id.
+     * @param string $value The param value of the download_id.
      */
-    public function setUploadId($key, $value)
+    public function setDownloadId($key, $value)
     {
-        // i don't think i need this, instead i need to be sending the size to here?
         $this->id[$key] = $value;
     }
 
@@ -70,7 +69,7 @@ class DownloadState
     /**
      * Set the part size.
      *
-     * @param $partSize int Size of upload parts.
+     * @param $partSize int Size of download parts.
      */
     public function setPartSize($partSize)
     {
@@ -78,10 +77,10 @@ class DownloadState
     }
 
     /**
-     * Marks a part as being uploaded.
+     * Marks a part as being downloaded.
      *
      * @param string   $partNumber The part number.
-     * @param array $partData   Data from the upload operation that needs to be
+     * @param array    $partData   Data from the download operation that needs to be
      *                          recalled during the complete operation.
      */
     public function markPartAsDownloaded($partNumber, array $partData = [])
@@ -90,19 +89,19 @@ class DownloadState
     }
 
     /**
-     * Returns whether a part has been uploaded.
+     * Returns whether a part has been downloaded.
      *
      * @param int $partNumber The part number.
      *
      * @return bool
      */
-    public function hasPartBeenUploaded($partNumber)
+    public function hasPartBeenDownloaded($partNumber)
     {
         return isset($this->downloadedParts[$partNumber]);
     }
 
     /**
-     * Returns a sorted list of all the uploaded parts.
+     * Returns a sorted list of all the downloaded parts.
      *
      * @return array
      */
@@ -113,7 +112,7 @@ class DownloadState
     }
 
     /**
-     * Set the status of the upload.
+     * Set the status of the download.
      *
      * @param int $status Status is an integer code defined by the constants
      *                    CREATED, INITIATED, and COMPLETED on this class.
@@ -125,7 +124,7 @@ class DownloadState
     }
 
     /**
-     * Determines whether the upload state is in the INITIATED status.
+     * Determines whether the download state is in the INITIATED status.
      *
      * @return bool
      */
@@ -135,7 +134,7 @@ class DownloadState
     }
 
     /**
-     * Determines whether the upload state is in the COMPLETED status.
+     * Determines whether the download state is in the COMPLETED status.
      *
      * @return bool
      */

@@ -53,10 +53,10 @@ class MultipartDownloaderTest extends TestCase
             }
         }
 
-        $uploader = new MultipartDownloader($client, $dest, $uploadOptions);
-        $result = $uploader->download();
+        $downloader = new MultipartDownloader($client, $dest, $uploadOptions);
+        $result = $downloader->download();
 
-        $this->assertTrue($uploader->getState()->isCompleted());
+        $this->assertTrue($downloader->getState()->isCompleted());
         $this->assertSame($url, $result['ObjectURL']);
     }
 
