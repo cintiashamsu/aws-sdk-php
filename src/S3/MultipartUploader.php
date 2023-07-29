@@ -55,6 +55,10 @@ class MultipartUploader extends AbstractUploader
      *   of the multipart upload and that is used to resume a previous upload.
      *   When this option is provided, the `bucket`, `key`, and `part_size`
      *   options are ignored.
+     * - add_content_md5: (boolean) Set to true to automatically calculate the
+     *   MD5 checksum for the upload.
+     * - checksum_algorithm: (string, default=string(CRC32)) S3 Checksum
+     *   Algorithm to use for upload.
      *
      * @param S3ClientInterface $client Client used for the upload.
      * @param mixed             $source Source of the data to upload.
@@ -70,6 +74,14 @@ class MultipartUploader extends AbstractUploader
             'key'    => null,
             'exception_class' => S3MultipartUploadException::class,
         ]);
+
+        if (isset($config['checksum_algorithm'])) {
+            $this->checksumAlgorithm = strtoupper($config['checksum_algorithm']);
+            $this->checksumParam = 'Checksum'.$this->checksumAlgorithm;
+        } else {
+            $this->checksumAlgorithm = 'CRC32';
+            $this->checksumParam = 'ChecksumCRC32';
+        }
     }
 
     protected function loadUploadWorkflowInfo()
@@ -132,6 +144,12 @@ class MultipartUploader extends AbstractUploader
         ) {
             $data['AddContentMD5'] = true;
         }
+
+        $data['ChecksumAlgorithm'] = $this->checksumAlgorithm;
+        $data[$this->checksumParam] = CalculatesChecksumTrait::getEncodedValue(
+            $this->checksumAlgorithm,
+            $body
+        );
 
         $data['ContentLength'] = $contentLength;
 
