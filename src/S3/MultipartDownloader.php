@@ -22,6 +22,8 @@ class MultipartDownloader extends AbstractDownloader
     public $destStream;
     public $streamPositionArray;
 
+    protected $checksumMode = true;
+
     /**
      * Creates a multipart download for an S3 object.
      *
@@ -73,6 +75,14 @@ class MultipartDownloader extends AbstractDownloader
                 'key'    => null,
                 'exception_class' => S3MultipartDownloadException::class,
             ]);
+
+        if (isset($config['checksum_validation_enabled'])
+            && !$config['checksum_validation_enabled']) {
+            $this->checksumMode = false;
+        }
+        if (isset($this->config['track_download']) && ($this->config['track_download'])) {
+            $this->getState()->displayProgress = true;
+        }
     }
 
     protected function loadDownloadWorkflowInfo()
@@ -85,7 +95,7 @@ class MultipartDownloader extends AbstractDownloader
             'id' => [
                 'bucket'    => 'Bucket',
                 'key'       => 'Key',
-                'download_id' => 'DownloadId',
+//                'download_id' => 'DownloadId',
             ],
             'part_num' => 'PartNumber',
         ];

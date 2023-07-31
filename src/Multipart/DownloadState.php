@@ -13,17 +13,35 @@ class DownloadState
     const INITIATED = 1;
     const COMPLETED = 2;
 
+    public $progressBar = [
+        "Transfer initiated...\n|                    | 0.0%\n",
+        "|==                  | 12.5%\n",
+        "|=====               | 25.0%\n",
+        "|=======             | 37.5%\n",
+        "|==========          | 50.0%\n",
+        "|============        | 62.5%\n",
+        "|===============     | 75.0%\n",
+        "|=================   | 87.5%\n",
+        "|====================| 100.0%\nTransfer complete!\n"
+    ];
+
     /** @var array Params used to identity the download. */
     private $id;
 
     /** @var int Part size being used by the download. */
-    private $partSize;
+    public $partSize;
 
     /** @var array Parts that have been downloaded. */
     private $downloadedParts = [];
 
     /** @var int Identifies the status the download. */
     private $status = self::CREATED;
+
+    /** @var array Thresholds for progress of the upload. */
+    private $progressThresholds = [];
+
+    /** @var boolean Determines status for tracking the upload */
+    public $displayProgress = false;
 
     /**
      * @param array $id Params used to identity the download.
@@ -51,10 +69,10 @@ class DownloadState
      * @param string $key   The param key of the download_id.
      * @param string $value The param value of the download_id.
      */
-    public function setDownloadId($key, $value)
-    {
-        $this->id[$key] = $value;
-    }
+//    public function setDownloadId($key, $value)
+//    {
+//        $this->id[$key] = $value;
+//    }
 
     /**
      * Get the part size.
@@ -74,6 +92,51 @@ class DownloadState
     public function setPartSize($partSize)
     {
         $this->partSize = $partSize;
+    }
+
+    /**
+     * Sets the 1/8th thresholds array. $totalSize is only sent if
+     * 'track_download' is true.
+     *
+     * @param $totalSize numeric Size of object to download.
+     *
+     * @return array
+     */
+    public function setProgressThresholds($totalSize)
+    {
+        if(!is_numeric($totalSize)) {
+            throw new \InvalidArgumentException(
+                'The total size of the upload must be a number.'
+            );
+        }
+
+        $this->progressThresholds[0] = 0;
+        for ($i=1;$i<=8;$i++) {
+            $this->progressThresholds []= round($totalSize*($i/8));
+        }
+        return $this->progressThresholds;
+    }
+
+    /**
+     * Prints progress of download.
+     *
+     * @param $totalUploaded numeric Size of download so far.
+     */
+    public function getDisplayProgress($totalUploaded)
+    {
+        if (!is_numeric($totalUploaded)) {
+            throw new \InvalidArgumentException(
+                'The size of the bytes being uploaded must be a number.'
+            );
+        }
+
+        if ($this->displayProgress) {
+            while (!empty($this->progressBar)
+                && $totalUploaded >= $this->progressThresholds[0]) {
+                echo array_shift($this->progressBar);
+                array_shift($this->progressThresholds);
+            }
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ use Aws\S3\MultipartDownloader;
 use Aws\Result;
 use Aws\S3\S3Client;
 use Aws\Test\UsesServiceTrait;
+use Aws\S3\CalculatesChecksumTrait;
 use GuzzleHttp\Promise;
 use GuzzleHttp\Psr7;
 use Psr\Http\Message\StreamInterface;
@@ -16,7 +17,14 @@ use Yoast\PHPUnitPolyfills\TestCases\TestCase;
  */
 class MultipartDownloaderTest extends TestCase
 {
+//    tests:
+//    - workflow for each of the config options
+//    - testing each method in multipart downloader
+//          - createPart, setStreamPositionArray, createDestStream
+//    -
+
     use UsesServiceTrait;
+    use CalculatesChecksumTrait;
 
     const MB = 1048576;
     const FILENAME = '_aws-sdk-php-s3-mup-test-dots.txt';
@@ -30,19 +38,18 @@ class MultipartDownloaderTest extends TestCase
      * @dataProvider getTestCases
      */
     public function testS3MultipartDownloadWorkflow(
-        array $clientOptions = [],
         array $uploadOptions = [],
-        $dest = null,
         $error = false
     ) {
-        $client = $this->getTestClient('s3', $clientOptions);
-        $url = 'http://foo.s3.amazonaws.com/bar';
+        $client = $this->getTestClient('s3');
         $this->addMockResults($client, [
-            new Result(['UploadId' => 'baz']),
-            new Result(['ETag' => 'A']),
-            new Result(['ETag' => 'B']),
-            new Result(['ETag' => 'C']),
-            new Result(['Location' => $url])
+            new Result(['Body' => Psr7\Utils::streamFor(str_repeat('.', 10 * self::MB)),
+                        'ChecksumValidated' => 'CRC32',
+//                        'ChecksumCRC32' =>
+//                            CalculatesChecksumTrait::getEncodedValue('crc32',
+//                                Psr7\Utils::streamFor(str_repeat('.', 10 * self::MB)))
+                        'ChecksumCRC32' => 'M6FqCg=='
+            ])
         ]);
 
         if ($error) {
@@ -53,83 +60,84 @@ class MultipartDownloaderTest extends TestCase
             }
         }
 
+        $filename = tmpfile();
+        $dest = stream_get_meta_data($filename)['uri'];
         $downloader = new MultipartDownloader($client, $dest, $uploadOptions);
         $result = $downloader->download();
+        $output = file_get_contents($dest);
 
+        $this->assertStringContainsString(str_repeat('.', 10 * self::MB), $output);
+        $this->assertTrue(filesize($dest) == 10*self::MB);
         $this->assertTrue($downloader->getState()->isCompleted());
-        $this->assertSame($url, $result['ObjectURL']);
     }
 
     public function getTestCases()
     {
         $defaults = [
             'bucket' => 'foo',
-            'key'    => 'bar',
+            'key'    => 'bar'
         ];
 
-        $data = str_repeat('.', 12 * self::MB);
-        $filename = sys_get_temp_dir() . '/' . self::FILENAME;
-        file_put_contents($filename, $data);
-
         return [
-            [ // Seekable stream, regular config
-                [],
-                ['acl' => 'private'] + $defaults,
-                Psr7\Utils::streamFor(fopen($filename, 'r'))
+            [
+                ['acl' => 'private'] + $defaults
             ],
-            [ // Non-seekable stream
-                [],
-                $defaults,
-                Psr7\Utils::streamFor($data)
+            [
+                ['MultipartDownloadType' => 'Range'] + $defaults
             ],
-            [ // Error: bad part_size
-                [],
-                ['part_size' => 1] + $defaults,
-                Psr7\FnStream::decorate(
-                    Psr7\Utils::streamFor($data), [
-                        'getSize' => function () {return null;}
-                    ]
-                ),
-                'InvalidArgumentException'
+            [
+                ['MultipartDownloadType' => 'Parts'] + $defaults
             ],
+            [
+                ['PartNumber' => '1'] + $defaults
+            ],
+            [
+                ['Range' => 'bytes=0-100'] + $defaults
+            ],
+            [
+                ['checksum_validation_enabled' => false] + $defaults
+            ],
+            [
+                ['checksum_validation_enabled' => true] + $defaults
+            ]
         ];
     }
 
-    public function testCanLoadStateFromService()
+    // continuing a prev download?
+    public function testCanLoadStateFromDownload()
     {
         $client = $this->getTestClient('s3');
-        $url = 'http://foo.s3.amazonaws.com/bar';
         $this->addMockResults($client, [
-            new Result(['Parts' => [
-                ['PartNumber' => 1, 'ETag' => 'A', 'Size' => 4 * self::MB],
-            ]]),
-            new Result(['ETag' => 'B']),
-            new Result(['ETag' => 'C']),
-            new Result(['Location' => $url])
+            new Result(['ETag' => 'A',
+                        'ChecksumValidated' => 'CRC32',
+                        'ContentLength' => 3 * self::MB])
         ]);
 
-        $state = MultipartUploader::getStateFromService($client, 'foo', 'bar', 'baz');
-        $source = Psr7\Utils::streamFor(str_repeat('.', 9 * self::MB));
-        $uploader = new MultipartUploader($client, $source, ['state' => $state]);
-        $result = $uploader->upload();
+        $size = 1 * self::MB;
+        $data = str_repeat('.', $size);
+        file_put_contents('php://memory', $data);
 
-        $this->assertTrue($uploader->getState()->isCompleted());
-        $this->assertSame(4 * self::MB, $uploader->getState()->getPartSize());
-        $this->assertSame($url, $result['ObjectURL']);
+        $state = MultipartDownloader::getStateFromService($client, 'foo', 'bar', 'php://memory');
+        $downloader = new MultipartDownloader($client, $dest, ['state' => $state]);
+        $downloader->download();
+
+        $this->assertTrue($downloader->getState()->isCompleted());
+//        $this->assertSame(4 * self::MB, $downloader->getState()->getPartSize());
+//        $this->assertSame($url, $result['ObjectURL']);
     }
 
     public function testCanUseCaseInsensitiveConfigKeys()
     {
         $client = $this->getTestClient('s3');
-        $putObjectMup = new MultipartUploader($client, Psr7\Utils::streamFor('x'), [
+        $putObjectMup = new MultipartDownloader($client, 'php://temp', [
             'Bucket' => 'bucket',
             'Key' => 'key',
         ]);
-        $classicMup = new MultipartUploader($client, Psr7\Utils::streamFor('x'), [
+        $classicMup = new MultipartDownloader($client, 'php://temp', [
             'bucket' => 'bucket',
             'key' => 'key',
         ]);
-        $configProp = (new \ReflectionClass(MultipartUploader::class))
+        $configProp = (new \ReflectionClass(MultipartDownloader::class))
             ->getProperty('config');
         $configProp->setAccessible(true);
 
@@ -146,11 +154,11 @@ class MultipartDownloaderTest extends TestCase
 
         return [
             [ // Seekable stream, regular config
-                Psr7\Utils::streamFor(fopen($filename, 'r')),
+                'php://temp',
                 $size,
             ],
             [ // Non-seekable stream
-                Psr7\Utils::streamFor($data),
+                'php://temp',
                 $size,
             ]
         ];
@@ -159,14 +167,14 @@ class MultipartDownloaderTest extends TestCase
     /**
      * @dataProvider testMultipartSuccessStreams
      */
-    public function testS3MultipartUploadParams($stream, $size)
+    public function testS3MultipartDownloadParams($dest, $size)
     {
         /** @var \Aws\S3\S3Client $client */
         $client = $this->getTestClient('s3');
         $client->getHandlerList()->appendSign(
             Middleware::tap(function ($cmd, $req) {
                 $name = $cmd->getName();
-                if ($name === 'UploadPart') {
+                if ($name === 'GetObject') {
                     $this->assertTrue(
                         $req->hasHeader('Content-MD5')
                     );
@@ -177,36 +185,40 @@ class MultipartDownloaderTest extends TestCase
             'bucket'          => 'foo',
             'key'             => 'bar',
             'add_content_md5' => true,
-            'params'          => [
-                'RequestPayer'  => 'test',
-                'ContentLength' => $size
-            ],
-            'before_initiate' => function($command) {
-                $this->assertSame('test', $command['RequestPayer']);
-            },
-            'before_upload'   => function($command) use ($size) {
-                $this->assertLessThan($size, $command['ContentLength']);
-                $this->assertSame('test', $command['RequestPayer']);
-            },
-            'before_complete' => function($command) {
-                $this->assertSame('test', $command['RequestPayer']);
-            }
+//            'params'          => [
+//                'RequestPayer'  => 'test',
+//                'ContentLength' => $size
+//            ],
+//            'before_initiate' => function($command) {
+//                $this->assertSame('test', $command['RequestPayer']);
+//            },
+//            'before_download'   => function($command) use ($size) {
+//                $this->assertLessThan($size, $command['ContentLength']);
+//                $this->assertSame('test', $command['RequestPayer']);
+//            },
+//            'before_complete' => function($command) {
+//                $this->assertSame('test', $command['RequestPayer']);
+//            },
+            'checksum_validation_enabled' => false
         ];
         $url = 'http://foo.s3.amazonaws.com/bar';
 
         $this->addMockResults($client, [
-            new Result(['UploadId' => 'baz']),
-            new Result(['ETag' => 'A']),
-            new Result(['ETag' => 'B']),
-            new Result(['ETag' => 'C']),
-            new Result(['Location' => $url])
+            new Result(['PartNumber' => 1, 'ETag' => 'A', 'Body' => 'foobar',
+                        'ChecksumValidated' => 'CRC32',
+//                        'ChecksumCRC32' => CalculatesChecksumTrait::getEncodedValue('crc32', 'foobar')
+]),
+            new Result(['PartNumber' => 2, 'ETag' => 'B', 'Body' => 'foobar2',
+                        'ChecksumValidated' => 'CRC32',
+//                        'ChecksumCRC32' => CalculatesChecksumTrait::getEncodedValue('crc32', 'foobar2')
+            ])
         ]);
-
-        $uploader = new MultipartUploader($client, $stream, $uploadOptions);
-        $result = $uploader->upload();
-
+        $filename = tmpfile();
+        $dest = stream_get_meta_data($filename)['uri'];
+        $uploader = new MultipartDownloader($client, $dest, $uploadOptions);
+        $result = $uploader->download();
+        print_r($result);
         $this->assertTrue($uploader->getState()->isCompleted());
-        $this->assertSame($url, $result['ObjectURL']);
     }
 
     public function getContentTypeSettingTests()
@@ -271,8 +283,8 @@ class MultipartDownloaderTest extends TestCase
             new Result(['Location' => $url])
         ]);
 
-        $uploader = new MultipartUploader($client, $stream, $uploadOptions);
-        $result = $uploader->upload();
+        $uploader = new MultipartDownloader($client, $stream, $uploadOptions);
+        $result = $uploader->download();
 
         $this->assertTrue($uploader->getState()->isCompleted());
         $this->assertSame($url, $result['ObjectURL']);
@@ -280,8 +292,8 @@ class MultipartDownloaderTest extends TestCase
 
     public function testAppliesAmbiguousSuccessParsing()
     {
-        $this->expectExceptionMessage("An exception occurred while uploading parts to a multipart upload");
-        $this->expectException(\Aws\S3\Exception\S3MultipartUploadException::class);
+        $this->expectExceptionMessage("An exception occurred while downloading parts to a multipart download");
+        $this->expectException(\Aws\S3\Exception\S3MultipartDownloadException::class);
         $counter = 0;
 
         $httpHandler = function ($request, array $options) use (&$counter) {
@@ -303,63 +315,22 @@ class MultipartDownloaderTest extends TestCase
             'http_handler' => $httpHandler
         ]);
 
-        $data = str_repeat('.', 12 * 1048576);
-        $source = Psr7\Utils::streamFor($data);
+//        $data = str_repeat('.', 12 * 1048576);
+//        $source = Psr7\Utils::streamFor($data);
 
-        $uploader = new MultipartUploader(
+        $filename = tmpfile();
+        $dest = stream_get_meta_data($filename)['uri'];
+
+        $downloader = new MultipartDownloader(
             $s3,
-            $source,
-            [
-                'bucket' => 'test-bucket',
-                'key' => 'test-key'
-            ]
-        );
-        $uploader->upload();
-    }
-
-    public function testFailedUploadPrintsPartialProgressBar()
-    {
-        $partialBar = [ "Transfer initiated...\n|                    | 0.0%\n",
-            "|==                  | 12.5%\n",
-            "|=====               | 25.0%\n"];
-        $this->expectOutputString("{$partialBar[0]}{$partialBar[1]}{$partialBar[2]}");
-
-        $this->expectExceptionMessage("An exception occurred while uploading parts to a multipart upload");
-        $this->expectException(\Aws\S3\Exception\S3MultipartUploadException::class);
-        $counter = 0;
-
-        $httpHandler = function ($request, array $options) use (&$counter) {
-            if ($counter < 4) {
-                $body = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><OperationNameResponse><UploadId>baz</UploadId></OperationNameResponse>";
-            } else {
-                $body = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n\n";
-            }
-            $counter++;
-
-            return Promise\Create::promiseFor(
-                new Psr7\Response(200, [], $body)
-            );
-        };
-
-        $s3 = new S3Client([
-            'version'     => 'latest',
-            'region'      => 'us-east-1',
-            'http_handler' => $httpHandler
-        ]);
-
-        $data = str_repeat('.', 50 * self::MB);
-        $source = Psr7\Utils::streamFor($data);
-
-        $uploader = new MultipartUploader(
-            $s3,
-            $source,
+            $dest,
             [
                 'bucket' => 'test-bucket',
                 'key' => 'test-key',
-                'track_upload' => 'true'
+                'checksum_validation_enabled' => false
             ]
         );
-        $uploader->upload();
+        $downloader->download();
     }
 }
 

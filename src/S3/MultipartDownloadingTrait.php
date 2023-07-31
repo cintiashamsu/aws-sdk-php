@@ -8,6 +8,8 @@ use GuzzleHttp\Psr7;
 
 trait MultipartDownloadingTrait
 {
+    private $downloadedBytes = 0;
+
     /**
      * Creates a DownloadState object for a multipart download by querying the
      * service for the specified download's information.
@@ -15,7 +17,6 @@ trait MultipartDownloadingTrait
      * @param S3ClientInterface $client   S3Client used for the download.
      * @param string            $bucket   Bucket for the multipart download.
      * @param string            $key      Object key for the multipart download.
-     * @param string            $downloadId Download ID for the multipart download.
      *
      * @return DownloadState
      */
@@ -23,26 +24,29 @@ trait MultipartDownloadingTrait
         S3ClientInterface $client,
                           $bucket,
                           $key,
-                          $downloadId
+                          $dest
     ) {
         $state = new DownloadState([
             'Bucket'   => $bucket,
-            'Key'      => $key,
-            'DownloadId' => $downloadId,
+            'Key'      => $key
         ]);
 
-        foreach ($client->getPaginator('ListParts', $state->getId()) as $result) {
-            // Get the part size from the first part in the first result.
-            if (!$state->getPartSize()) {
-                $state->setPartSize($result->search('Parts[0].Size'));
-            }
-            // Mark all the parts returned by ListParts as downloaded.
-            foreach ($result['Parts'] as $part) {
-                $state->markPartAsDownloaded($part['PartNumber'], [
-                    'PartNumber' => $part['PartNumber'],
-                    'ETag'       => $part['ETag']
-                ]);
-            }
+        $info = $client->headObject([
+            'Bucket'   => $bucket,
+            'Key'      => $key,
+//            'ChecksumMode' => 'ENABLED'
+        ]);
+
+        $totalSize = $info['ContentLength'];
+        $state->setPartSize(1048576);
+        $partSize = $state->getPartSize();
+        $destStream = new Psr7\LazyOpenStream($dest, 'rw');
+
+        for ($byte = 0; $byte <= $totalSize; $byte+=$partSize) {
+            $stream = new Psr7\LimitStream($destStream, $partSize, $byte);
+            echo $stream->getSize() . "\n";
+            echo $stream->tell() . "\n";
+            // mark part as downloaded as you check
         }
 
         $state->setStatus(DownloadState::INITIATED);
@@ -51,6 +55,12 @@ trait MultipartDownloadingTrait
 
     protected function handleResult($command, ResultInterface $result)
     {
+        if ($this->checksumMode) {
+            if ($this->validateChecksum($result)){
+                throw new \Exception('Checksum invalid.');
+            }
+        }
+
         if (!($command instanceof CommandInterface)){
             // single part downloads - part and range
             $partNumber = 1;
@@ -66,12 +76,31 @@ trait MultipartDownloadingTrait
             $partNumber = $command['PartNumber'];
             $position = $this->streamPositionArray[$command['PartNumber']];
         }
-
         $this->getState()->markPartAsDownloaded($partNumber, [
             'PartNumber' => $partNumber,
             'ETag' => $this->extractETag($result),
         ]);
+
         $this->writeDestStream($position, $result['Body']);
+        if ($this->getState()->displayProgress) {
+            $this->downloadedBytes+=strlen($result['Body']);
+            $this->getState()->getDisplayProgress($this->downloadedBytes);
+        }
+    }
+
+    private function validateChecksum($result)
+    {
+        if (isset($result['ChecksumValidated'])) {
+            $checksum = CalculatesChecksumTrait::getEncodedValue(
+                $result['ChecksumValidated'], $result['Body']
+            );
+            if ($checksum != $result['Checksum' . $result['ChecksumValidated']]) {
+                return true;
+            }
+        } elseif (!strpos($result['ETag'], '-')
+            && $result['ETag'] != md5($result['Body'])) {
+            return true;
+        }
     }
 
     protected function writeDestStream($position, $body)
@@ -106,6 +135,10 @@ trait MultipartDownloadingTrait
         }
 
         $params[$configType['config']] = $configType['configParam'];
+
+        if (isset($this->checksumMode)) {
+            $params['ChecksumMode'] = 'ENABLED';
+        }
 
         return $params;
     }

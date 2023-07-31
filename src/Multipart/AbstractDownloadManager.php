@@ -110,11 +110,10 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                 $type = $this->getDownloadType();
                 $result = (yield $this->execCommand('initiate', $this->getInitiateParams($type)));
                 $this->determineSourceSize($result['ContentRange']);
+                if ($this->getState()->displayProgress) {
+                    $this->state->setProgressThresholds($this->sourceSize);
+                }
                 $this->setStreamPositionArray();
-                $this->state->setDownloadId(
-                    $this->info['id']['download_id'],
-                    $result[$this->info['id']['download_id']]
-                );
                 $this->state->setStatus(DownloadState::INITIATED);
                 if (isset($type['multipart'])){
                     $this->handleResult(1, $result);
@@ -127,6 +126,9 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
                 or isset($this->config['range'])
                 or $result['PartsCount']==1){
                 $this->state->setStatus(DownloadState::COMPLETED);
+                if ($this->getState()->displayProgress) {
+                    echo end($this->state->progressBar);
+                }
             } else {
                 // Create a command pool from a generator that yields DownloadPart
                 // commands for each download part.
@@ -246,9 +248,9 @@ abstract class AbstractDownloadManager implements Promise\PromisorInterface
         }
 
         // Otherwise, construct a new state from the provided identifiers.
+        // TODO delete id logic
         $required = $this->info['id'];
-        $id = [$required['download_id'] => null];
-        unset($required['download_id']);
+        $id = [];
         foreach ($required as $key => $param) {
             if (!$this->config[$key]) {
                 throw new IAE('You must provide a value for "' . $key . '" in '

@@ -18,10 +18,10 @@ class MultipartDownloadException extends \RuntimeException implements
      * @param \Exception|array $prev  Exception being thrown.
      */
     public function __construct(DownloadState $state, $prev = null) {
-        $msg = 'An exception occurred while performing a multipart upload';
+        $msg = 'An exception occurred while performing a multipart download';
 
         if (is_array($prev)) {
-            $msg = strtr($msg, ['performing' => 'uploading parts to']);
+            $msg = strtr($msg, ['performing' => 'downloading parts to']);
             $msg .= ". The following parts had errors:\n";
             /** @var $error AwsException */
             foreach ($prev as $part => $error) {
@@ -29,11 +29,11 @@ class MultipartDownloadException extends \RuntimeException implements
             }
         } elseif ($prev instanceof AwsException) {
             switch ($prev->getCommand()->getName()) {
-                case 'CreateMultipartUpload':
-                case 'InitiateMultipartUpload':
+                case 'GetObject':
+                case 'GetObject':
                     $action = 'initiating';
                     break;
-                case 'CompleteMultipartUpload':
+                case 'GetObject':
                     $action = 'completing';
                     break;
             }

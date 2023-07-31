@@ -11,15 +11,10 @@ class DownloadStateTest extends TestCase
 {
     public function testCanManageStatusAndDownloadId()
     {
-        $state = new DownloadState(['a' => true]);
-        $this->assertArrayHasKey('a', $state->getId());
+        $state = new DownloadState([]);
         // Note: the state should not be initiated at first.
         $this->assertFalse($state->isInitiated());
         $this->assertFalse($state->isCompleted());
-
-        $state->setUploadId('b', true);
-        $this->assertArrayHasKey('b', $state->getId());
-        $this->assertArrayHasKey('a', $state->getId());
 
         $state->setStatus(DownloadState::INITIATED);
         $this->assertFalse($state->isCompleted());
@@ -60,7 +55,6 @@ class DownloadStateTest extends TestCase
         $state->setPartSize(5);
         $state->markPartAsDownloaded(1);
         $state->setStatus($state::INITIATED);
-        $state->setUploadId('foo', 'bar');
         $serializedState = serialize($state);
 
         /** @var DownloadState $newState */
@@ -68,6 +62,5 @@ class DownloadStateTest extends TestCase
         $this->assertSame(5, $newState->getPartSize());
         $this->assertArrayHasKey(1, $state->getDownloadedParts());
         $this->assertTrue($newState->isInitiated());
-        $this->assertArrayHasKey('foo', $newState->getId());
     }
 }

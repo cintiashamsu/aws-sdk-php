@@ -4,6 +4,7 @@ namespace Aws\Test\Multipart;
 use Aws\Command;
 use Aws\Exception\AwsException;
 use Aws\Exception\MultipartDownloadException;
+use Aws\S3\MultipartDownloader;
 use Aws\Multipart\DownloadState;
 use Aws\Result;
 use Aws\Test\UsesServiceTrait;
@@ -24,14 +25,12 @@ class AbstractDownloaderTest extends TestCase
         $state->setStatus($status);
 
         return $this->getTestDownloader(
-            $source ?: Psr7\Utils::streamFor(),
             ['state' => $state],
             $results
         );
     }
 
     private function getTestDownloader(
-        $source = null,
         array $config = [],
         array $results = []
     ) {
@@ -41,7 +40,7 @@ class AbstractDownloaderTest extends TestCase
         ]);
         $this->addMockResults($client, $results);
 
-        return new TestDownloader($client, $source ?: Psr7\Utils::streamFor(), $config);
+        return new MultipartDownloader($client, 'php://temp', $config);
     }
 
     public function testThrowsExceptionOnBadInitiateRequest()
@@ -55,39 +54,40 @@ class AbstractDownloaderTest extends TestCase
 
     public function testThrowsExceptionIfStateIsCompleted()
     {
+        // set exception to expect
+        // set state as completed
+        // make sure state is completed
+        // check that exception is thrown
         $this->expectException(\LogicException::class);
-        $uploader = $this->getUploaderWithState(UploadState::COMPLETED);
-        $this->assertTrue($uploader->getState()->isCompleted());
-        $uploader->upload();
+        $downloader = $this->getDownloaderWithState(DownloadState::COMPLETED);
+        $this->assertTrue($downloader->getState()->isCompleted());
+        $downloader->download();
     }
 
     public function testSuccessfulCompleteReturnsResult()
     {
-        $uploader = $this->getUploaderWithState(UploadState::CREATED, [
-            new Result(), // Initiate
-            new Result(), // Upload
-            new Result(), // Upload
-            new Result(), // Upload
-            new Result(['test' => 'foo']) // Complete
-        ], Psr7\Utils::streamFor('abcdef'));
-        $this->assertSame('foo', $uploader->upload()['test']);
-        $this->assertTrue($uploader->getState()->isCompleted());
+        //
+        $downloader = $this->getDownloaderWithState(DownloadState::CREATED, [
+            new Result(['body' => Psr7\Utils::streamFor(str_repeat('.', 1 * 1048576))])
+        ], 'php://temp');
+        $this->assertSame(str_repeat('.', 1 * 1048576), $downloader->download()['body']);
+        $this->assertTrue($downloader->getState()->isCompleted());
     }
 
     public function testThrowsExceptionOnBadCompleteRequest()
     {
-        $this->expectException(\Aws\S3\Exception\S3MultipartUploadException::class);
-        $uploader = $this->getUploaderWithState(UploadState::CREATED, [
+        $this->expectException(\Aws\S3\Exception\S3MultipartDownloadException::class);
+        $uploader = $this->getDownloaderWithState(DownloadState::CREATED, [
             new Result(), // Initiate
             new Result(), // Upload
             new AwsException('Failed', new Command('Complete')),
-        ], Psr7\Utils::streamFor('a'));
-        $uploader->upload();
+        ], 'php://temp');
+        $uploader->download();
     }
 
     public function testThrowsExceptionOnBadUploadRequest()
     {
-        $uploader = $this->getUploaderWithState(UploadState::CREATED, [
+        $uploader = $this->getDownloaderWithState(DownloadState::CREATED, [
             new Result(), // Initiate
             new AwsException('Failed[1]', new Command('Upload', ['PartNumber' => 1])),
             new Result(), // Upload
@@ -97,9 +97,9 @@ class AbstractDownloaderTest extends TestCase
         ], Psr7\Utils::streamFor('abcdefghi'));
 
         try {
-            $uploader->upload();
+            $uploader->download();
             $this->fail('No exception was thrown.');
-        } catch (MultipartUploadException $e) {
+        } catch (MultipartDownloadException $e) {
             $message = $e->getMessage();
             $this->assertStringContainsString('Failed[1]', $message);
             $this->assertStringContainsString('Failed[4]', $message);
@@ -112,7 +112,7 @@ class AbstractDownloaderTest extends TestCase
             // Test if can resume an upload.
             $serializedState = serialize($e->getState());
             $state = unserialize($serializedState);
-            $secondChance = $this->getTestUploader(
+            $secondChance = $this->getTestDownloader(
                 Psr7\Utils::streamFor('abcdefghi'),
                 ['state' => $state],
                 [
@@ -133,7 +133,7 @@ class AbstractDownloaderTest extends TestCase
             $called++;
         };
 
-        $uploader = $this->getTestUploader(Psr7\Utils::streamFor('abcde'), [
+        $uploader = $this->getTestDownloader(Psr7\Utils::streamFor('abcde'), [
             'bucket'              => 'foo',
             'key'                 => 'bar',
             'prepare_data_source' => $fn,
@@ -157,45 +157,19 @@ class AbstractDownloaderTest extends TestCase
     public function testRequiresIdParams()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->getTestUploader(Psr7\Utils::streamFor());
-    }
-
-    public function testCanSetSourceFromFilenameIfExists()
-    {
-        $config = ['bucket' => 'foo', 'key' => 'bar'];
-
-        // CASE 1: Filename exists.
-        $uploader = $this->getTestUploader(__FILE__, $config);
-        $this->assertInstanceOf(
-            'Psr\Http\Message\StreamInterface',
-            $this->getPropertyValue($uploader, 'source')
-        );
-
-        // CASE 2: Filename does not exist.
-        $exception = null;
-        try {
-            $this->getTestUploader('non-existent-file.foobar', $config);
-        } catch (\Exception $exception) {}
-        $this->assertInstanceOf('RuntimeException', $exception);
-
-        // CASE 3: Source stream is not readable.
-        $exception = null;
-        try {
-            $this->getTestUploader(STDERR, $config);
-        } catch (\Exception $exception) {}
-        $this->assertInstanceOf('InvalidArgumentException', $exception);
+        $this->getTestDownloader();
     }
 
     /**
      * @param bool        $seekable
-     * @param UploadState $state
+     * @param DownloadState $state
      * @param array       $expectedBodies
      *
      * @dataProvider getPartGeneratorTestCases
      */
     public function testCommandGeneratorYieldsExpectedUploadCommands(
         $seekable,
-        UploadState $state,
+        DownloadState $state,
         array $expectedBodies
     ) {
         $source = Psr7\Utils::streamFor(fopen(__DIR__ . '/source.txt', 'r'));
@@ -203,7 +177,7 @@ class AbstractDownloaderTest extends TestCase
             $source = new Psr7\NoSeekStream($source);
         }
 
-        $uploader = $this->getTestUploader($source, ['state' => $state]);
+        $uploader = $this->getTestDownloader($source, ['state' => $state]);
         $uploader->getState();
         $handler = function (callable $handler) {
             return function ($c, $r) use ($handler) {
@@ -213,7 +187,7 @@ class AbstractDownloaderTest extends TestCase
 
         $actualBodies = [];
         $getUploadCommands = (new \ReflectionObject($uploader))
-            ->getMethod('getUploadCommands');
+            ->getMethod('getDownloadCommands');
         $getUploadCommands->setAccessible(true);
         foreach ($getUploadCommands->invoke($uploader, $handler) as $cmd) {
             $actualBodies[$cmd['PartNumber']] = $cmd['Body']->getContents();
@@ -234,12 +208,12 @@ class AbstractDownloaderTest extends TestCase
         ];
         $expectedSkip = $expected;
         unset($expectedSkip[1], $expectedSkip[2], $expectedSkip[4]);
-        $state = new UploadState([]);
+        $state = new DownloadState([]);
         $state->setPartSize(2);
         $stateSkip = clone $state;
-        $stateSkip->markPartAsUploaded(1);
-        $stateSkip->markPartAsUploaded(2);
-        $stateSkip->markPartAsUploaded(4);
+        $stateSkip->markPartAsDownloaded(1);
+        $stateSkip->markPartAsDownloaded(2);
+        $stateSkip->markPartAsDownloaded(4);
         return [
             [true,  $state,     $expected],
             [false, $state,     $expected],
