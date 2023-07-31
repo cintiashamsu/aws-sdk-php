@@ -54,6 +54,7 @@ trait MultipartUploadingTrait
         $this->getState()->markPartAsUploaded($command['PartNumber'], [
             'PartNumber' => $command['PartNumber'],
             'ETag'       => $this->extractETag($result),
+            $this->checksumParam => $result[$this->checksumParam]
         ]);
     }
 
@@ -67,6 +68,10 @@ trait MultipartUploadingTrait
         $params['MultipartUpload'] = [
             'Parts' => $this->getState()->getUploadedParts()
         ];
+        $params['MultipartUpload'][$this->checksumParam] =
+            CalculatesChecksumTrait::getEncodedValue(
+                $this->checksumAlgorithm, $this->source
+            );
 
         return $params;
     }
@@ -106,6 +111,8 @@ trait MultipartUploadingTrait
         if (empty($params['ContentType']) && $type = $this->getSourceMimeType()) {
             $params['ContentType'] = $type;
         }
+
+        $params['ChecksumAlgorithm'] = $this->checksumAlgorithm;
 
         return $params;
     }
