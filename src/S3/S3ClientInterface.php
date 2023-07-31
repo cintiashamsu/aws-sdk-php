@@ -217,6 +217,18 @@ interface S3ClientInterface extends AwsClientInterface
         array $options = []
     );
 
+    public function download(
+        $bucket,
+        $key,
+        $dest
+    );
+
+    public function downloadAsync(
+        $bucket,
+        $key,
+        $dest
+    );
+
     /**
      * Copy an object of any size to a different location.
      *

@@ -49,6 +49,25 @@ trait S3ClientTrait
             ->promise();
     }
 
+    public function download(
+        $bucket,
+        $key,
+        $dest
+    ) {
+        return $this
+            ->downloadAsync($bucket, $key, $dest)
+            ->wait();
+    }
+
+    public function downloadAsync(
+        $bucket,
+        $key,
+        $dest
+    ) {
+        return (new ObjectDownloader($bucket, $key, $dest))
+            ->promise();
+    }
+
     /**
      * @see S3ClientInterface::copy()
      */

@@ -13,6 +13,18 @@ class UploadState
     const INITIATED = 1;
     const COMPLETED = 2;
 
+    protected $progressBar = [
+        "Transfer initiated...\n|                    | 0.0%\n",
+        "|==                  | 12.5%\n",
+        "|=====               | 25.0%\n",
+        "|=======             | 37.5%\n",
+        "|==========          | 50.0%\n",
+        "|============        | 62.5%\n",
+        "|===============     | 75.0%\n",
+        "|=================   | 87.5%\n",
+        "|====================| 100.0%\nTransfer complete!\n"
+    ];
+
     /** @var array Params used to identity the upload. */
     private $id;
 
@@ -24,6 +36,10 @@ class UploadState
 
     /** @var int Identifies the status the upload. */
     private $status = self::CREATED;
+
+    private $progressThresholds = [];
+
+//    private $displayUploadProgress;
 
     /**
      * @param array $id Params used to identity the upload.
@@ -76,6 +92,35 @@ class UploadState
         $this->partSize = $partSize;
     }
 
+    public function setProgressThresholds($totalSize)
+    {
+        if(!is_int($totalSize)) {
+            throw new \InvalidArgumentException('The total size of the upload must be an int.');
+        }
+
+        $this->progressThresholds[0] = 0;
+        for ($i=1;$i<=8;$i++) {
+            $this->progressThresholds []= round($totalSize*($i/8));
+        }
+        $this->progressBar = array_combine($this->progressThresholds, $this->progressBar);
+        return $this->progressThresholds;
+    }
+
+    public function displayProgress($totalUploaded)
+    {
+        if(!is_int($totalUploaded)) {
+            throw new \InvalidArgumentException('The size of the bytes being uploaded must be an int.');
+        }
+
+        while ($this->progressThresholds
+                && !empty($this->progressBar)
+                && $totalUploaded >= array_key_first($this->progressBar))
+        {
+            echo $this->progressBar[array_key_first($this->progressBar)];
+            unset($this->progressBar[array_key_first($this->progressBar)]);
+        }
+    }
+
     /**
      * Marks a part as being uploaded.
      *
@@ -108,7 +153,6 @@ class UploadState
     public function getUploadedParts()
     {
         ksort($this->uploadedParts);
-
         return $this->uploadedParts;
     }
 
@@ -118,6 +162,7 @@ class UploadState
      * @param int $status Status is an integer code defined by the constants
      *                    CREATED, INITIATED, and COMPLETED on this class.
      */
+
     public function setStatus($status)
     {
         $this->status = $status;
