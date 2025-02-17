@@ -5,11 +5,13 @@
     "endpointPrefix":"guardduty",
     "jsonVersion":"1.1",
     "protocol":"rest-json",
+    "protocols":["rest-json"],
     "serviceFullName":"Amazon GuardDuty",
     "serviceId":"GuardDuty",
     "signatureVersion":"v4",
     "signingName":"guardduty",
-    "uid":"guardduty-2017-11-28"
+    "uid":"guardduty-2017-11-28",
+    "auth":["aws.auth#sigv4"]
   },
   "operations":{
     "AcceptAdministratorInvitation":{
@@ -95,6 +97,22 @@
       "output":{"shape":"CreateIPSetResponse"},
       "errors":[
         {"shape":"BadRequestException"},
+        {"shape":"InternalServerErrorException"}
+      ]
+    },
+    "CreateMalwareProtectionPlan":{
+      "name":"CreateMalwareProtectionPlan",
+      "http":{
+        "method":"POST",
+        "requestUri":"/malware-protection-plan",
+        "responseCode":200
+      },
+      "input":{"shape":"CreateMalwareProtectionPlanRequest"},
+      "output":{"shape":"CreateMalwareProtectionPlanResponse"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"AccessDeniedException"},
+        {"shape":"ConflictException"},
         {"shape":"InternalServerErrorException"}
       ]
     },
@@ -222,6 +240,21 @@
       "errors":[
         {"shape":"BadRequestException"},
         {"shape":"InternalServerErrorException"}
+      ]
+    },
+    "DeleteMalwareProtectionPlan":{
+      "name":"DeleteMalwareProtectionPlan",
+      "http":{
+        "method":"DELETE",
+        "requestUri":"/malware-protection-plan/{malwareProtectionPlanId}",
+        "responseCode":200
+      },
+      "input":{"shape":"DeleteMalwareProtectionPlanRequest"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"AccessDeniedException"},
+        {"shape":"InternalServerErrorException"},
+        {"shape":"ResourceNotFoundException"}
       ]
     },
     "DeleteMembers":{
@@ -492,6 +525,22 @@
         {"shape":"InternalServerErrorException"}
       ]
     },
+    "GetMalwareProtectionPlan":{
+      "name":"GetMalwareProtectionPlan",
+      "http":{
+        "method":"GET",
+        "requestUri":"/malware-protection-plan/{malwareProtectionPlanId}",
+        "responseCode":200
+      },
+      "input":{"shape":"GetMalwareProtectionPlanRequest"},
+      "output":{"shape":"GetMalwareProtectionPlanResponse"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"AccessDeniedException"},
+        {"shape":"InternalServerErrorException"},
+        {"shape":"ResourceNotFoundException"}
+      ]
+    },
     "GetMalwareScanSettings":{
       "name":"GetMalwareScanSettings",
       "http":{
@@ -545,6 +594,19 @@
       },
       "input":{"shape":"GetMembersRequest"},
       "output":{"shape":"GetMembersResponse"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"InternalServerErrorException"}
+      ]
+    },
+    "GetOrganizationStatistics":{
+      "name":"GetOrganizationStatistics",
+      "http":{
+        "method":"GET",
+        "requestUri":"/organization/statistics",
+        "responseCode":200
+      },
+      "output":{"shape":"GetOrganizationStatisticsResponse"},
       "errors":[
         {"shape":"BadRequestException"},
         {"shape":"InternalServerErrorException"}
@@ -687,6 +749,21 @@
       "output":{"shape":"ListInvitationsResponse"},
       "errors":[
         {"shape":"BadRequestException"},
+        {"shape":"InternalServerErrorException"}
+      ]
+    },
+    "ListMalwareProtectionPlans":{
+      "name":"ListMalwareProtectionPlans",
+      "http":{
+        "method":"GET",
+        "requestUri":"/malware-protection-plan",
+        "responseCode":200
+      },
+      "input":{"shape":"ListMalwareProtectionPlansRequest"},
+      "output":{"shape":"ListMalwareProtectionPlansResponse"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"AccessDeniedException"},
         {"shape":"InternalServerErrorException"}
       ]
     },
@@ -904,6 +981,21 @@
         {"shape":"InternalServerErrorException"}
       ]
     },
+    "UpdateMalwareProtectionPlan":{
+      "name":"UpdateMalwareProtectionPlan",
+      "http":{
+        "method":"PATCH",
+        "requestUri":"/malware-protection-plan/{malwareProtectionPlanId}",
+        "responseCode":200
+      },
+      "input":{"shape":"UpdateMalwareProtectionPlanRequest"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"AccessDeniedException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"InternalServerErrorException"}
+      ]
+    },
     "UpdateMalwareScanSettings":{
       "name":"UpdateMalwareScanSettings",
       "http":{
@@ -1064,6 +1156,23 @@
       "error":{"httpStatusCode":403},
       "exception":true
     },
+    "AccessKey":{
+      "type":"structure",
+      "members":{
+        "PrincipalId":{
+          "shape":"String",
+          "locationName":"principalId"
+        },
+        "UserName":{
+          "shape":"String",
+          "locationName":"userName"
+        },
+        "UserType":{
+          "shape":"String",
+          "locationName":"userType"
+        }
+      }
+    },
     "AccessKeyDetails":{
       "type":"structure",
       "members":{
@@ -1082,6 +1191,20 @@
         "UserType":{
           "shape":"String",
           "locationName":"userType"
+        }
+      }
+    },
+    "Account":{
+      "type":"structure",
+      "required":["Uid"],
+      "members":{
+        "Uid":{
+          "shape":"String",
+          "locationName":"uid"
+        },
+        "Name":{
+          "shape":"String",
+          "locationName":"account"
         }
       }
     },
@@ -1151,6 +1274,23 @@
         }
       }
     },
+    "AccountStatistics":{
+      "type":"structure",
+      "members":{
+        "AccountId":{
+          "shape":"String",
+          "locationName":"accountId"
+        },
+        "LastGeneratedAt":{
+          "shape":"Timestamp",
+          "locationName":"lastGeneratedAt"
+        },
+        "TotalFindings":{
+          "shape":"Integer",
+          "locationName":"totalFindings"
+        }
+      }
+    },
     "Action":{
       "type":"structure",
       "members":{
@@ -1181,8 +1321,48 @@
         "RdsLoginAttemptAction":{
           "shape":"RdsLoginAttemptAction",
           "locationName":"rdsLoginAttemptAction"
+        },
+        "KubernetesPermissionCheckedDetails":{
+          "shape":"KubernetesPermissionCheckedDetails",
+          "locationName":"kubernetesPermissionCheckedDetails"
+        },
+        "KubernetesRoleBindingDetails":{
+          "shape":"KubernetesRoleBindingDetails",
+          "locationName":"kubernetesRoleBindingDetails"
+        },
+        "KubernetesRoleDetails":{
+          "shape":"KubernetesRoleDetails",
+          "locationName":"kubernetesRoleDetails"
         }
       }
+    },
+    "Actor":{
+      "type":"structure",
+      "required":["Id"],
+      "members":{
+        "Id":{
+          "shape":"String",
+          "locationName":"id"
+        },
+        "User":{
+          "shape":"User",
+          "locationName":"user"
+        },
+        "Session":{
+          "shape":"Session",
+          "locationName":"session"
+        }
+      }
+    },
+    "ActorIds":{
+      "type":"list",
+      "member":{"shape":"String"},
+      "max":400
+    },
+    "Actors":{
+      "type":"list",
+      "member":{"shape":"Actor"},
+      "max":400
     },
     "AddonDetails":{
       "type":"structure",
@@ -1251,6 +1431,73 @@
       "key":{"shape":"String"},
       "value":{"shape":"String"}
     },
+    "AgentDetails":{
+      "type":"structure",
+      "members":{
+        "Version":{
+          "shape":"String",
+          "locationName":"version"
+        }
+      }
+    },
+    "Anomaly":{
+      "type":"structure",
+      "members":{
+        "Profiles":{
+          "shape":"AnomalyProfiles",
+          "locationName":"profiles"
+        },
+        "Unusual":{
+          "shape":"AnomalyUnusual",
+          "locationName":"unusual"
+        }
+      }
+    },
+    "AnomalyObject":{
+      "type":"structure",
+      "members":{
+        "ProfileType":{
+          "shape":"ProfileType",
+          "locationName":"profileType"
+        },
+        "ProfileSubtype":{
+          "shape":"ProfileSubtype",
+          "locationName":"profileSubtype"
+        },
+        "Observations":{
+          "shape":"Observations",
+          "locationName":"observations"
+        }
+      }
+    },
+    "AnomalyProfileFeatureObjects":{
+      "type":"list",
+      "member":{"shape":"AnomalyObject"}
+    },
+    "AnomalyProfileFeatures":{
+      "type":"map",
+      "key":{"shape":"String"},
+      "value":{"shape":"AnomalyProfileFeatureObjects"}
+    },
+    "AnomalyProfiles":{
+      "type":"map",
+      "key":{"shape":"String"},
+      "value":{"shape":"AnomalyProfileFeatures"}
+    },
+    "AnomalyUnusual":{
+      "type":"structure",
+      "members":{
+        "Behavior":{
+          "shape":"Behavior",
+          "locationName":"behavior"
+        }
+      }
+    },
+    "AnomalyUnusualBehaviorFeature":{
+      "type":"map",
+      "key":{"shape":"String"},
+      "value":{"shape":"AnomalyObject"}
+    },
     "ArchiveFindingsRequest":{
       "type":"structure",
       "required":[
@@ -1281,6 +1528,23 @@
         "ALL",
         "NONE"
       ]
+    },
+    "AutonomousSystem":{
+      "type":"structure",
+      "required":[
+        "Name",
+        "Number"
+      ],
+      "members":{
+        "Name":{
+          "shape":"String",
+          "locationName":"name"
+        },
+        "Number":{
+          "shape":"Integer",
+          "locationName":"number"
+        }
+      }
     },
     "AwsApiCallAction":{
       "type":"structure",
@@ -1337,6 +1601,11 @@
       },
       "error":{"httpStatusCode":400},
       "exception":true
+    },
+    "Behavior":{
+      "type":"map",
+      "key":{"shape":"String"},
+      "value":{"shape":"AnomalyUnusualBehaviorFeature"}
     },
     "BlockPublicAccess":{
       "type":"structure",
@@ -1521,6 +1790,19 @@
         }
       }
     },
+    "ContainerInstanceDetails":{
+      "type":"structure",
+      "members":{
+        "CoveredContainerInstances":{
+          "shape":"Long",
+          "locationName":"coveredContainerInstances"
+        },
+        "CompatibleContainerInstances":{
+          "shape":"Long",
+          "locationName":"compatibleContainerInstances"
+        }
+      }
+    },
     "Containers":{
       "type":"list",
       "member":{"shape":"Container"}
@@ -1553,6 +1835,48 @@
         }
       }
     },
+    "CoverageEc2InstanceDetails":{
+      "type":"structure",
+      "members":{
+        "InstanceId":{
+          "shape":"String",
+          "locationName":"instanceId"
+        },
+        "InstanceType":{
+          "shape":"String",
+          "locationName":"instanceType"
+        },
+        "ClusterArn":{
+          "shape":"String",
+          "locationName":"clusterArn"
+        },
+        "AgentDetails":{
+          "shape":"AgentDetails",
+          "locationName":"agentDetails"
+        },
+        "ManagementType":{
+          "shape":"ManagementType",
+          "locationName":"managementType"
+        }
+      }
+    },
+    "CoverageEcsClusterDetails":{
+      "type":"structure",
+      "members":{
+        "ClusterName":{
+          "shape":"String",
+          "locationName":"clusterName"
+        },
+        "FargateDetails":{
+          "shape":"FargateDetails",
+          "locationName":"fargateDetails"
+        },
+        "ContainerInstanceDetails":{
+          "shape":"ContainerInstanceDetails",
+          "locationName":"containerInstanceDetails"
+        }
+      }
+    },
     "CoverageEksClusterDetails":{
       "type":"structure",
       "members":{
@@ -1571,6 +1895,10 @@
         "AddonDetails":{
           "shape":"AddonDetails",
           "locationName":"addonDetails"
+        },
+        "ManagementType":{
+          "shape":"ManagementType",
+          "locationName":"managementType"
         }
       }
     },
@@ -1616,7 +1944,13 @@
         "CLUSTER_NAME",
         "RESOURCE_TYPE",
         "COVERAGE_STATUS",
-        "ADDON_VERSION"
+        "ADDON_VERSION",
+        "MANAGEMENT_TYPE",
+        "EKS_CLUSTER_NAME",
+        "ECS_CLUSTER_NAME",
+        "AGENT_VERSION",
+        "INSTANCE_ID",
+        "CLUSTER_ARN"
       ]
     },
     "CoverageFilterCriterionList":{
@@ -1668,6 +2002,14 @@
         "ResourceType":{
           "shape":"ResourceType",
           "locationName":"resourceType"
+        },
+        "EcsClusterDetails":{
+          "shape":"CoverageEcsClusterDetails",
+          "locationName":"ecsClusterDetails"
+        },
+        "Ec2InstanceDetails":{
+          "shape":"CoverageEc2InstanceDetails",
+          "locationName":"ec2InstanceDetails"
         }
       }
     },
@@ -1696,7 +2038,10 @@
         "COVERAGE_STATUS",
         "ISSUE",
         "ADDON_VERSION",
-        "UPDATED_AT"
+        "UPDATED_AT",
+        "EKS_CLUSTER_NAME",
+        "ECS_CLUSTER_NAME",
+        "INSTANCE_ID"
       ]
     },
     "CoverageStatistics":{
@@ -1882,6 +2227,45 @@
         }
       }
     },
+    "CreateMalwareProtectionPlanRequest":{
+      "type":"structure",
+      "required":[
+        "Role",
+        "ProtectedResource"
+      ],
+      "members":{
+        "ClientToken":{
+          "shape":"ClientToken",
+          "idempotencyToken":true,
+          "locationName":"clientToken"
+        },
+        "Role":{
+          "shape":"String",
+          "locationName":"role"
+        },
+        "ProtectedResource":{
+          "shape":"CreateProtectedResource",
+          "locationName":"protectedResource"
+        },
+        "Actions":{
+          "shape":"MalwareProtectionPlanActions",
+          "locationName":"actions"
+        },
+        "Tags":{
+          "shape":"TagMap",
+          "locationName":"tags"
+        }
+      }
+    },
+    "CreateMalwareProtectionPlanResponse":{
+      "type":"structure",
+      "members":{
+        "MalwareProtectionPlanId":{
+          "shape":"String",
+          "locationName":"malwareProtectionPlanId"
+        }
+      }
+    },
     "CreateMembersRequest":{
       "type":"structure",
       "required":[
@@ -1907,6 +2291,15 @@
         "UnprocessedAccounts":{
           "shape":"UnprocessedAccounts",
           "locationName":"unprocessedAccounts"
+        }
+      }
+    },
+    "CreateProtectedResource":{
+      "type":"structure",
+      "members":{
+        "S3Bucket":{
+          "shape":"CreateS3BucketResource",
+          "locationName":"s3Bucket"
         }
       }
     },
@@ -1945,6 +2338,19 @@
         "DestinationId":{
           "shape":"String",
           "locationName":"destinationId"
+        }
+      }
+    },
+    "CreateS3BucketResource":{
+      "type":"structure",
+      "members":{
+        "BucketName":{
+          "shape":"String",
+          "locationName":"bucketName"
+        },
+        "ObjectPrefixes":{
+          "shape":"MalwareProtectionPlanObjectPrefixesList",
+          "locationName":"objectPrefixes"
         }
       }
     },
@@ -2161,6 +2567,27 @@
         }
       }
     },
+    "DateStatistics":{
+      "type":"structure",
+      "members":{
+        "Date":{
+          "shape":"Timestamp",
+          "locationName":"date"
+        },
+        "LastGeneratedAt":{
+          "shape":"Timestamp",
+          "locationName":"lastGeneratedAt"
+        },
+        "Severity":{
+          "shape":"Double",
+          "locationName":"severity"
+        },
+        "TotalFindings":{
+          "shape":"Integer",
+          "locationName":"totalFindings"
+        }
+      }
+    },
     "DeclineInvitationsRequest":{
       "type":"structure",
       "required":["AccountIds"],
@@ -2275,6 +2702,17 @@
         "UnprocessedAccounts":{
           "shape":"UnprocessedAccounts",
           "locationName":"unprocessedAccounts"
+        }
+      }
+    },
+    "DeleteMalwareProtectionPlanRequest":{
+      "type":"structure",
+      "required":["MalwareProtectionPlanId"],
+      "members":{
+        "MalwareProtectionPlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"malwareProtectionPlanId"
         }
       }
     },
@@ -2546,6 +2984,19 @@
       "type":"list",
       "member":{"shape":"Destination"}
     },
+    "Detection":{
+      "type":"structure",
+      "members":{
+        "Anomaly":{
+          "shape":"Anomaly",
+          "locationName":"anomaly"
+        },
+        "Sequence":{
+          "shape":"Sequence",
+          "locationName":"sequence"
+        }
+      }
+    },
     "DetectorAdditionalConfiguration":{
       "type":"structure",
       "members":{
@@ -2592,7 +3043,8 @@
         "EBS_MALWARE_PROTECTION",
         "RDS_LOGIN_EVENTS",
         "EKS_RUNTIME_MONITORING",
-        "LAMBDA_NETWORK_LOGS"
+        "LAMBDA_NETWORK_LOGS",
+        "RUNTIME_MONITORING"
       ]
     },
     "DetectorFeatureConfiguration":{
@@ -2652,7 +3104,8 @@
         "EBS_MALWARE_PROTECTION",
         "RDS_LOGIN_EVENTS",
         "EKS_RUNTIME_MONITORING",
-        "LAMBDA_NETWORK_LOGS"
+        "LAMBDA_NETWORK_LOGS",
+        "RUNTIME_MONITORING"
       ]
     },
     "DetectorId":{
@@ -2768,6 +3221,10 @@
         "Blocked":{
           "shape":"Boolean",
           "locationName":"blocked"
+        },
+        "DomainWithSuffix":{
+          "shape":"String",
+          "locationName":"domainWithSuffix"
         }
       }
     },
@@ -2846,6 +3303,77 @@
           "locationName":"reason"
         }
       }
+    },
+    "Ec2Instance":{
+      "type":"structure",
+      "members":{
+        "AvailabilityZone":{
+          "shape":"String",
+          "locationName":"availabilityZone"
+        },
+        "ImageDescription":{
+          "shape":"String",
+          "locationName":"imageDescription"
+        },
+        "InstanceState":{
+          "shape":"String",
+          "locationName":"instanceState"
+        },
+        "IamInstanceProfile":{"shape":"IamInstanceProfile"},
+        "InstanceType":{
+          "shape":"String",
+          "locationName":"instanceType"
+        },
+        "OutpostArn":{
+          "shape":"String",
+          "locationName":"outpostArn"
+        },
+        "Platform":{
+          "shape":"String",
+          "locationName":"platform"
+        },
+        "ProductCodes":{
+          "shape":"ProductCodes",
+          "locationName":"productCodes"
+        },
+        "Ec2NetworkInterfaceUids":{
+          "shape":"Ec2NetworkInterfaceUids",
+          "locationName":"ec2NetworkInterfaceUids"
+        }
+      }
+    },
+    "Ec2NetworkInterface":{
+      "type":"structure",
+      "members":{
+        "Ipv6Addresses":{
+          "shape":"Ipv6Addresses",
+          "locationName":"ipv6Addresses"
+        },
+        "PrivateIpAddresses":{
+          "shape":"PrivateIpAddresses",
+          "locationName":"privateIpAddresses"
+        },
+        "PublicIp":{
+          "shape":"String",
+          "locationName":"publicIp"
+        },
+        "SecurityGroups":{
+          "shape":"SecurityGroups",
+          "locationName":"securityGroups"
+        },
+        "SubNetId":{
+          "shape":"String",
+          "locationName":"subNetId"
+        },
+        "VpcId":{
+          "shape":"String",
+          "locationName":"vpcId"
+        }
+      }
+    },
+    "Ec2NetworkInterfaceUids":{
+      "type":"list",
+      "member":{"shape":"String"}
     },
     "EcsClusterDetails":{
       "type":"structure",
@@ -2926,6 +3454,10 @@
         "Group":{
           "shape":"String",
           "locationName":"group"
+        },
+        "LaunchType":{
+          "shape":"String",
+          "locationName":"launchType"
         }
       }
     },
@@ -2961,7 +3493,8 @@
     "Email":{
       "type":"string",
       "max":64,
-      "min":1
+      "min":1,
+      "sensitive":true
     },
     "EnableOrganizationAdminAccountRequest":{
       "type":"structure",
@@ -2977,6 +3510,11 @@
       "type":"structure",
       "members":{
       }
+    },
+    "EndpointIds":{
+      "type":"list",
+      "member":{"shape":"String"},
+      "max":400
     },
     "Eq":{
       "type":"list",
@@ -2995,9 +3533,26 @@
         }
       }
     },
+    "FargateDetails":{
+      "type":"structure",
+      "members":{
+        "Issues":{
+          "shape":"Issues",
+          "locationName":"issues"
+        },
+        "ManagementType":{
+          "shape":"ManagementType",
+          "locationName":"managementType"
+        }
+      }
+    },
     "FeatureAdditionalConfiguration":{
       "type":"string",
-      "enum":["EKS_ADDON_MANAGEMENT"]
+      "enum":[
+        "EKS_ADDON_MANAGEMENT",
+        "ECS_FARGATE_AGENT_MANAGEMENT",
+        "EC2_AGENT_MANAGEMENT"
+      ]
     },
     "FeatureStatus":{
       "type":"string",
@@ -3166,6 +3721,10 @@
         "UpdatedAt":{
           "shape":"String",
           "locationName":"updatedAt"
+        },
+        "AssociatedAttackSequenceArn":{
+          "shape":"String",
+          "locationName":"associatedAttackSequenceArn"
         }
       }
     },
@@ -3197,6 +3756,16 @@
         "SIX_HOURS"
       ]
     },
+    "FindingResourceType":{
+      "type":"string",
+      "enum":[
+        "EC2_INSTANCE",
+        "EC2_NETWORK_INTERFACE",
+        "S3_BUCKET",
+        "S3_OBJECT",
+        "ACCESS_KEY"
+      ]
+    },
     "FindingStatisticType":{
       "type":"string",
       "enum":["COUNT_BY_SEVERITY"]
@@ -3212,7 +3781,29 @@
       "members":{
         "CountBySeverity":{
           "shape":"CountBySeverity",
+          "deprecated":true,
+          "deprecatedMessage":"This parameter is deprecated. Please set GroupBy to 'SEVERITY' to return GroupedBySeverity instead.",
           "locationName":"countBySeverity"
+        },
+        "GroupedByAccount":{
+          "shape":"GroupedByAccount",
+          "locationName":"groupedByAccount"
+        },
+        "GroupedByDate":{
+          "shape":"GroupedByDate",
+          "locationName":"groupedByDate"
+        },
+        "GroupedByFindingType":{
+          "shape":"GroupedByFindingType",
+          "locationName":"groupedByFindingType"
+        },
+        "GroupedByResource":{
+          "shape":"GroupedByResource",
+          "locationName":"groupedByResource"
+        },
+        "GroupedBySeverity":{
+          "shape":"GroupedBySeverity",
+          "locationName":"groupedBySeverity"
         }
       }
     },
@@ -3220,6 +3811,23 @@
       "type":"string",
       "max":50,
       "min":1
+    },
+    "FindingTypeStatistics":{
+      "type":"structure",
+      "members":{
+        "FindingType":{
+          "shape":"String",
+          "locationName":"findingType"
+        },
+        "LastGeneratedAt":{
+          "shape":"Timestamp",
+          "locationName":"lastGeneratedAt"
+        },
+        "TotalFindings":{
+          "shape":"Integer",
+          "locationName":"totalFindings"
+        }
+      }
     },
     "FindingTypes":{
       "type":"list",
@@ -3275,7 +3883,9 @@
         "EBS_MALWARE_PROTECTION",
         "RDS_LOGIN_EVENTS",
         "EKS_RUNTIME_MONITORING",
-        "LAMBDA_NETWORK_LOGS"
+        "LAMBDA_NETWORK_LOGS",
+        "FARGATE_RUNTIME_MONITORING",
+        "EC2_RUNTIME_MONITORING"
       ]
     },
     "GeoLocation":{
@@ -3484,10 +4094,7 @@
     },
     "GetFindingsStatisticsRequest":{
       "type":"structure",
-      "required":[
-        "DetectorId",
-        "FindingStatisticTypes"
-      ],
+      "required":["DetectorId"],
       "members":{
         "DetectorId":{
           "shape":"DetectorId",
@@ -3496,11 +4103,25 @@
         },
         "FindingStatisticTypes":{
           "shape":"FindingStatisticTypes",
+          "deprecated":true,
+          "deprecatedMessage":"This parameter is deprecated, please use GroupBy instead",
           "locationName":"findingStatisticTypes"
         },
         "FindingCriteria":{
           "shape":"FindingCriteria",
           "locationName":"findingCriteria"
+        },
+        "GroupBy":{
+          "shape":"GroupByType",
+          "locationName":"groupBy"
+        },
+        "OrderBy":{
+          "shape":"OrderBy",
+          "locationName":"orderBy"
+        },
+        "MaxResults":{
+          "shape":"MaxResults100",
+          "locationName":"maxResults"
         }
       }
     },
@@ -3511,6 +4132,10 @@
         "FindingStatistics":{
           "shape":"FindingStatistics",
           "locationName":"findingStatistics"
+        },
+        "NextToken":{
+          "shape":"String",
+          "locationName":"nextToken"
         }
       }
     },
@@ -3575,6 +4200,54 @@
         "InvitationsCount":{
           "shape":"Integer",
           "locationName":"invitationsCount"
+        }
+      }
+    },
+    "GetMalwareProtectionPlanRequest":{
+      "type":"structure",
+      "required":["MalwareProtectionPlanId"],
+      "members":{
+        "MalwareProtectionPlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"malwareProtectionPlanId"
+        }
+      }
+    },
+    "GetMalwareProtectionPlanResponse":{
+      "type":"structure",
+      "members":{
+        "Arn":{
+          "shape":"String",
+          "locationName":"arn"
+        },
+        "Role":{
+          "shape":"String",
+          "locationName":"role"
+        },
+        "ProtectedResource":{
+          "shape":"CreateProtectedResource",
+          "locationName":"protectedResource"
+        },
+        "Actions":{
+          "shape":"MalwareProtectionPlanActions",
+          "locationName":"actions"
+        },
+        "CreatedAt":{
+          "shape":"Timestamp",
+          "locationName":"createdAt"
+        },
+        "Status":{
+          "shape":"MalwareProtectionPlanStatus",
+          "locationName":"status"
+        },
+        "StatusReasons":{
+          "shape":"MalwareProtectionPlanStatusReasonsList",
+          "locationName":"statusReasons"
+        },
+        "Tags":{
+          "shape":"TagMap",
+          "locationName":"tags"
         }
       }
     },
@@ -3694,6 +4367,15 @@
         "UnprocessedAccounts":{
           "shape":"UnprocessedAccounts",
           "locationName":"unprocessedAccounts"
+        }
+      }
+    },
+    "GetOrganizationStatisticsResponse":{
+      "type":"structure",
+      "members":{
+        "OrganizationDetails":{
+          "shape":"OrganizationDetails",
+          "locationName":"organizationDetails"
         }
       }
     },
@@ -3823,6 +4505,36 @@
         }
       }
     },
+    "GroupByType":{
+      "type":"string",
+      "enum":[
+        "ACCOUNT",
+        "DATE",
+        "FINDING_TYPE",
+        "RESOURCE",
+        "SEVERITY"
+      ]
+    },
+    "GroupedByAccount":{
+      "type":"list",
+      "member":{"shape":"AccountStatistics"}
+    },
+    "GroupedByDate":{
+      "type":"list",
+      "member":{"shape":"DateStatistics"}
+    },
+    "GroupedByFindingType":{
+      "type":"list",
+      "member":{"shape":"FindingTypeStatistics"}
+    },
+    "GroupedByResource":{
+      "type":"list",
+      "member":{"shape":"ResourceStatistics"}
+    },
+    "GroupedBySeverity":{
+      "type":"list",
+      "member":{"shape":"SeverityStatistics"}
+    },
     "Groups":{
       "type":"list",
       "member":{"shape":"String"}
@@ -3869,6 +4581,73 @@
           "locationName":"id"
         }
       }
+    },
+    "ImpersonatedUser":{
+      "type":"structure",
+      "members":{
+        "Username":{
+          "shape":"String",
+          "locationName":"username"
+        },
+        "Groups":{
+          "shape":"Groups",
+          "locationName":"groups"
+        }
+      }
+    },
+    "Indicator":{
+      "type":"structure",
+      "required":["Key"],
+      "members":{
+        "Key":{
+          "shape":"IndicatorType",
+          "locationName":"key"
+        },
+        "Values":{
+          "shape":"IndicatorValues",
+          "locationName":"values"
+        },
+        "Title":{
+          "shape":"IndicatorTitle",
+          "locationName":"title"
+        }
+      }
+    },
+    "IndicatorTitle":{
+      "type":"string",
+      "max":256,
+      "min":1
+    },
+    "IndicatorType":{
+      "type":"string",
+      "enum":[
+        "SUSPICIOUS_USER_AGENT",
+        "SUSPICIOUS_NETWORK",
+        "MALICIOUS_IP",
+        "TOR_IP",
+        "ATTACK_TACTIC",
+        "HIGH_RISK_API",
+        "ATTACK_TECHNIQUE",
+        "UNUSUAL_API_FOR_ACCOUNT",
+        "UNUSUAL_ASN_FOR_ACCOUNT",
+        "UNUSUAL_ASN_FOR_USER"
+      ]
+    },
+    "IndicatorValueString":{
+      "type":"string",
+      "max":256,
+      "min":1
+    },
+    "IndicatorValues":{
+      "type":"list",
+      "member":{"shape":"IndicatorValueString"},
+      "max":400,
+      "min":1
+    },
+    "Indicators":{
+      "type":"list",
+      "member":{"shape":"Indicator"},
+      "max":400
     },
     "InstanceArn":{
       "type":"string",
@@ -4052,6 +4831,29 @@
       "type":"list",
       "member":{"shape":"String"}
     },
+    "Issues":{
+      "type":"list",
+      "member":{"shape":"String"},
+      "max":50,
+      "min":0
+    },
+    "ItemPath":{
+      "type":"structure",
+      "members":{
+        "NestedItemPath":{
+          "shape":"String",
+          "locationName":"nestedItemPath"
+        },
+        "Hash":{
+          "shape":"String",
+          "locationName":"hash"
+        }
+      }
+    },
+    "ItemPaths":{
+      "type":"list",
+      "member":{"shape":"ItemPath"}
+    },
     "KubernetesApiCallAction":{
       "type":"structure",
       "members":{
@@ -4065,7 +4867,7 @@
         },
         "SourceIps":{
           "shape":"SourceIps",
-          "locationName":"sourceIps"
+          "locationName":"sourceIPs"
         },
         "UserAgent":{
           "shape":"String",
@@ -4082,6 +4884,22 @@
         "Parameters":{
           "shape":"String",
           "locationName":"parameters"
+        },
+        "Resource":{
+          "shape":"String",
+          "locationName":"resource"
+        },
+        "Subresource":{
+          "shape":"String",
+          "locationName":"subresource"
+        },
+        "Namespace":{
+          "shape":"String",
+          "locationName":"namespace"
+        },
+        "ResourceName":{
+          "shape":"String",
+          "locationName":"resourceName"
         }
       }
     },
@@ -4147,6 +4965,69 @@
         }
       }
     },
+    "KubernetesPermissionCheckedDetails":{
+      "type":"structure",
+      "members":{
+        "Verb":{
+          "shape":"String",
+          "locationName":"verb"
+        },
+        "Resource":{
+          "shape":"String",
+          "locationName":"resource"
+        },
+        "Namespace":{
+          "shape":"String",
+          "locationName":"namespace"
+        },
+        "Allowed":{
+          "shape":"Boolean",
+          "locationName":"allowed"
+        }
+      }
+    },
+    "KubernetesRoleBindingDetails":{
+      "type":"structure",
+      "members":{
+        "Kind":{
+          "shape":"String",
+          "locationName":"kind"
+        },
+        "Name":{
+          "shape":"String",
+          "locationName":"name"
+        },
+        "Uid":{
+          "shape":"String",
+          "locationName":"uid"
+        },
+        "RoleRefName":{
+          "shape":"String",
+          "locationName":"roleRefName"
+        },
+        "RoleRefKind":{
+          "shape":"String",
+          "locationName":"roleRefKind"
+        }
+      }
+    },
+    "KubernetesRoleDetails":{
+      "type":"structure",
+      "members":{
+        "Kind":{
+          "shape":"String",
+          "locationName":"kind"
+        },
+        "Name":{
+          "shape":"String",
+          "locationName":"name"
+        },
+        "Uid":{
+          "shape":"String",
+          "locationName":"uid"
+        }
+      }
+    },
     "KubernetesUserDetails":{
       "type":"structure",
       "members":{
@@ -4165,6 +5046,10 @@
         "SessionName":{
           "shape":"SessionNameList",
           "locationName":"sessionName"
+        },
+        "ImpersonatedUser":{
+          "shape":"ImpersonatedUser",
+          "locationName":"impersonatedUser"
         }
       }
     },
@@ -4198,6 +5083,18 @@
         "Volumes":{
           "shape":"Volumes",
           "locationName":"volumes"
+        },
+        "ServiceAccountName":{
+          "shape":"String",
+          "locationName":"serviceAccountName"
+        },
+        "HostIPC":{
+          "shape":"Boolean",
+          "locationName":"hostIPC"
+        },
+        "HostPID":{
+          "shape":"Boolean",
+          "locationName":"hostPID"
         }
       }
     },
@@ -4496,6 +5393,29 @@
         }
       }
     },
+    "ListMalwareProtectionPlansRequest":{
+      "type":"structure",
+      "members":{
+        "NextToken":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"nextToken"
+        }
+      }
+    },
+    "ListMalwareProtectionPlansResponse":{
+      "type":"structure",
+      "members":{
+        "MalwareProtectionPlans":{
+          "shape":"MalwareProtectionPlansSummary",
+          "locationName":"malwareProtectionPlans"
+        },
+        "NextToken":{
+          "shape":"String",
+          "locationName":"nextToken"
+        }
+      }
+    },
     "ListMembersRequest":{
       "type":"structure",
       "required":["DetectorId"],
@@ -4657,8 +5577,12 @@
       "type":"structure",
       "members":{
         "IpAddressV4":{
-          "shape":"String",
+          "shape":"SensitiveString",
           "locationName":"ipAddressV4"
+        },
+        "IpAddressV6":{
+          "shape":"SensitiveString",
+          "locationName":"ipAddressV6"
         }
       }
     },
@@ -4738,6 +5662,94 @@
         }
       }
     },
+    "MalwareProtectionPlanActions":{
+      "type":"structure",
+      "members":{
+        "Tagging":{
+          "shape":"MalwareProtectionPlanTaggingAction",
+          "locationName":"tagging"
+        }
+      }
+    },
+    "MalwareProtectionPlanObjectPrefixesList":{
+      "type":"list",
+      "member":{"shape":"String"},
+      "max":5,
+      "min":0
+    },
+    "MalwareProtectionPlanStatus":{
+      "type":"string",
+      "enum":[
+        "ACTIVE",
+        "WARNING",
+        "ERROR"
+      ]
+    },
+    "MalwareProtectionPlanStatusReason":{
+      "type":"structure",
+      "members":{
+        "Code":{
+          "shape":"String",
+          "locationName":"code"
+        },
+        "Message":{
+          "shape":"String",
+          "locationName":"message"
+        }
+      }
+    },
+    "MalwareProtectionPlanStatusReasonsList":{
+      "type":"list",
+      "member":{"shape":"MalwareProtectionPlanStatusReason"},
+      "max":50,
+      "min":0
+    },
+    "MalwareProtectionPlanSummary":{
+      "type":"structure",
+      "members":{
+        "MalwareProtectionPlanId":{
+          "shape":"String",
+          "locationName":"malwareProtectionPlanId"
+        }
+      }
+    },
+    "MalwareProtectionPlanTaggingAction":{
+      "type":"structure",
+      "members":{
+        "Status":{
+          "shape":"MalwareProtectionPlanTaggingActionStatus",
+          "locationName":"status"
+        }
+      }
+    },
+    "MalwareProtectionPlanTaggingActionStatus":{
+      "type":"string",
+      "enum":[
+        "ENABLED",
+        "DISABLED"
+      ]
+    },
+    "MalwareProtectionPlansSummary":{
+      "type":"list",
+      "member":{"shape":"MalwareProtectionPlanSummary"}
+    },
+    "MalwareScanDetails":{
+      "type":"structure",
+      "members":{
+        "Threats":{
+          "shape":"Threats",
+          "locationName":"threats"
+        }
+      }
+    },
+    "ManagementType":{
+      "type":"string",
+      "enum":[
+        "AUTO_MANAGED",
+        "MANUAL",
+        "DISABLED"
+      ]
+    },
     "MapEquals":{
       "type":"list",
       "member":{"shape":"ScanConditionPair"}
@@ -4766,6 +5778,11 @@
     "MaxResults":{
       "type":"integer",
       "max":50,
+      "min":1
+    },
+    "MaxResults100":{
+      "type":"integer",
+      "max":100,
       "min":1
     },
     "Member":{
@@ -4932,6 +5949,13 @@
       "type":"list",
       "member":{"shape":"String"}
     },
+    "MfaStatus":{
+      "type":"string",
+      "enum":[
+        "ENABLED",
+        "DISABLED"
+      ]
+    },
     "Name":{
       "type":"string",
       "max":300,
@@ -4940,6 +5964,16 @@
     "Neq":{
       "type":"list",
       "member":{"shape":"String"}
+    },
+    "NetworkConnection":{
+      "type":"structure",
+      "required":["Direction"],
+      "members":{
+        "Direction":{
+          "shape":"NetworkDirection",
+          "locationName":"direction"
+        }
+      }
     },
     "NetworkConnectionAction":{
       "type":"structure",
@@ -4964,6 +5998,10 @@
           "shape":"LocalIpDetails",
           "locationName":"localIpDetails"
         },
+        "LocalNetworkInterface":{
+          "shape":"String",
+          "locationName":"localNetworkInterface"
+        },
         "RemoteIpDetails":{
           "shape":"RemoteIpDetails",
           "locationName":"remoteIpDetails"
@@ -4971,6 +6009,79 @@
         "RemotePortDetails":{
           "shape":"RemotePortDetails",
           "locationName":"remotePortDetails"
+        }
+      }
+    },
+    "NetworkDirection":{
+      "type":"string",
+      "enum":[
+        "INBOUND",
+        "OUTBOUND"
+      ]
+    },
+    "NetworkEndpoint":{
+      "type":"structure",
+      "required":["Id"],
+      "members":{
+        "Id":{
+          "shape":"String",
+          "locationName":"id"
+        },
+        "Ip":{
+          "shape":"String",
+          "locationName":"ip"
+        },
+        "Domain":{
+          "shape":"String",
+          "locationName":"domain"
+        },
+        "Port":{
+          "shape":"Integer",
+          "locationName":"port"
+        },
+        "Location":{
+          "shape":"NetworkGeoLocation",
+          "locationName":"location"
+        },
+        "AutonomousSystem":{
+          "shape":"AutonomousSystem",
+          "locationName":"autonomousSystem"
+        },
+        "Connection":{
+          "shape":"NetworkConnection",
+          "locationName":"connection"
+        }
+      }
+    },
+    "NetworkEndpoints":{
+      "type":"list",
+      "member":{"shape":"NetworkEndpoint"},
+      "max":400
+    },
+    "NetworkGeoLocation":{
+      "type":"structure",
+      "required":[
+        "City",
+        "Country",
+        "Latitude",
+        "Longitude"
+      ],
+      "members":{
+        "City":{
+          "shape":"String",
+          "locationName":"city"
+        },
+        "Country":{
+          "shape":"String",
+          "locationName":"country"
+        },
+        "Latitude":{
+          "shape":"Double",
+          "locationName":"lat"
+        },
+        "Longitude":{
+          "shape":"Double",
+          "locationName":"lon"
         }
       }
     },
@@ -4990,7 +6101,7 @@
           "locationName":"privateDnsName"
         },
         "PrivateIpAddress":{
-          "shape":"String",
+          "shape":"SensitiveString",
           "locationName":"privateIpAddress"
         },
         "PrivateIpAddresses":{
@@ -5032,6 +6143,19 @@
       "type":"list",
       "member":{"shape":"String"}
     },
+    "ObservationTexts":{
+      "type":"list",
+      "member":{"shape":"String"}
+    },
+    "Observations":{
+      "type":"structure",
+      "members":{
+        "Text":{
+          "shape":"ObservationTexts",
+          "locationName":"text"
+        }
+      }
+    },
     "OrderBy":{
       "type":"string",
       "enum":[
@@ -5047,12 +6171,17 @@
         "EBS_MALWARE_PROTECTION",
         "RDS_LOGIN_EVENTS",
         "EKS_RUNTIME_MONITORING",
-        "LAMBDA_NETWORK_LOGS"
+        "LAMBDA_NETWORK_LOGS",
+        "RUNTIME_MONITORING"
       ]
     },
     "OrgFeatureAdditionalConfiguration":{
       "type":"string",
-      "enum":["EKS_ADDON_MANAGEMENT"]
+      "enum":[
+        "EKS_ADDON_MANAGEMENT",
+        "ECS_FARGATE_AGENT_MANAGEMENT",
+        "EC2_AGENT_MANAGEMENT"
+      ]
     },
     "OrgFeatureStatus":{
       "type":"string",
@@ -5152,6 +6281,19 @@
         }
       }
     },
+    "OrganizationDetails":{
+      "type":"structure",
+      "members":{
+        "UpdatedAt":{
+          "shape":"Timestamp",
+          "locationName":"updatedAt"
+        },
+        "OrganizationStatistics":{
+          "shape":"OrganizationStatistics",
+          "locationName":"organizationStatistics"
+        }
+      }
+    },
     "OrganizationEbsVolumes":{
       "type":"structure",
       "members":{
@@ -5203,6 +6345,44 @@
           "locationName":"additionalConfiguration"
         }
       }
+    },
+    "OrganizationFeatureStatistics":{
+      "type":"structure",
+      "members":{
+        "Name":{
+          "shape":"OrgFeature",
+          "locationName":"name"
+        },
+        "EnabledAccountsCount":{
+          "shape":"Integer",
+          "locationName":"enabledAccountsCount"
+        },
+        "AdditionalConfiguration":{
+          "shape":"OrganizationFeatureStatisticsAdditionalConfigurations",
+          "locationName":"additionalConfiguration"
+        }
+      }
+    },
+    "OrganizationFeatureStatisticsAdditionalConfiguration":{
+      "type":"structure",
+      "members":{
+        "Name":{
+          "shape":"OrgFeatureAdditionalConfiguration",
+          "locationName":"name"
+        },
+        "EnabledAccountsCount":{
+          "shape":"Integer",
+          "locationName":"enabledAccountsCount"
+        }
+      }
+    },
+    "OrganizationFeatureStatisticsAdditionalConfigurations":{
+      "type":"list",
+      "member":{"shape":"OrganizationFeatureStatisticsAdditionalConfiguration"}
+    },
+    "OrganizationFeatureStatisticsResults":{
+      "type":"list",
+      "member":{"shape":"OrganizationFeatureStatistics"}
     },
     "OrganizationFeaturesConfigurations":{
       "type":"list",
@@ -5308,6 +6488,31 @@
         }
       }
     },
+    "OrganizationStatistics":{
+      "type":"structure",
+      "members":{
+        "TotalAccountsCount":{
+          "shape":"Integer",
+          "locationName":"totalAccountsCount"
+        },
+        "MemberAccountsCount":{
+          "shape":"Integer",
+          "locationName":"memberAccountsCount"
+        },
+        "ActiveAccountsCount":{
+          "shape":"Integer",
+          "locationName":"activeAccountsCount"
+        },
+        "EnabledAccountsCount":{
+          "shape":"Integer",
+          "locationName":"enabledAccountsCount"
+        },
+        "CountByFeature":{
+          "shape":"OrganizationFeatureStatisticsResults",
+          "locationName":"countByFeature"
+        }
+      }
+    },
     "Owner":{
       "type":"structure",
       "members":{
@@ -5376,7 +6581,7 @@
           "locationName":"privateDnsName"
         },
         "PrivateIpAddress":{
-          "shape":"String",
+          "shape":"SensitiveString",
           "locationName":"privateIpAddress"
         }
       }
@@ -5459,6 +6664,19 @@
       "type":"list",
       "member":{"shape":"ProductCode"}
     },
+    "ProfileSubtype":{
+      "type":"string",
+      "enum":[
+        "FREQUENT",
+        "INFREQUENT",
+        "UNSEEN",
+        "RARE"
+      ]
+    },
+    "ProfileType":{
+      "type":"string",
+      "enum":["FREQUENCY"]
+    },
     "PublicAccess":{
       "type":"structure",
       "members":{
@@ -5471,6 +6689,48 @@
           "locationName":"effectivePermission"
         }
       }
+    },
+    "PublicAccessConfiguration":{
+      "type":"structure",
+      "members":{
+        "PublicAclAccess":{
+          "shape":"PublicAccessStatus",
+          "locationName":"publicAclAccess"
+        },
+        "PublicPolicyAccess":{
+          "shape":"PublicAccessStatus",
+          "locationName":"publicPolicyAccess"
+        },
+        "PublicAclIgnoreBehavior":{
+          "shape":"PublicAclIgnoreBehavior",
+          "locationName":"publicAclIgnoreBehavior"
+        },
+        "PublicBucketRestrictBehavior":{
+          "shape":"PublicBucketRestrictBehavior",
+          "locationName":"publicBucketRestrictBehavior"
+        }
+      }
+    },
+    "PublicAccessStatus":{
+      "type":"string",
+      "enum":[
+        "BLOCKED",
+        "ALLOWED"
+      ]
+    },
+    "PublicAclIgnoreBehavior":{
+      "type":"string",
+      "enum":[
+        "IGNORED",
+        "NOT_IGNORED"
+      ]
+    },
+    "PublicBucketRestrictBehavior":{
+      "type":"string",
+      "enum":[
+        "RESTRICTED",
+        "NOT_RESTRICTED"
+      ]
     },
     "PublishingStatus":{
       "type":"string",
@@ -5537,6 +6797,39 @@
         }
       }
     },
+    "RdsLimitlessDbDetails":{
+      "type":"structure",
+      "members":{
+        "DbShardGroupIdentifier":{
+          "shape":"String",
+          "locationName":"dbShardGroupIdentifier"
+        },
+        "DbShardGroupResourceId":{
+          "shape":"String",
+          "locationName":"dbShardGroupResourceId"
+        },
+        "DbShardGroupArn":{
+          "shape":"String",
+          "locationName":"dbShardGroupArn"
+        },
+        "Engine":{
+          "shape":"String",
+          "locationName":"engine"
+        },
+        "EngineVersion":{
+          "shape":"String",
+          "locationName":"engineVersion"
+        },
+        "DbClusterIdentifier":{
+          "shape":"String",
+          "locationName":"dbClusterIdentifier"
+        },
+        "Tags":{
+          "shape":"Tags",
+          "locationName":"tags"
+        }
+      }
+    },
     "RdsLoginAttemptAction":{
       "type":"structure",
       "members":{
@@ -5576,8 +6869,12 @@
           "locationName":"geoLocation"
         },
         "IpAddressV4":{
-          "shape":"String",
+          "shape":"SensitiveString",
           "locationName":"ipAddressV4"
+        },
+        "IpAddressV6":{
+          "shape":"SensitiveString",
+          "locationName":"ipAddressV6"
         },
         "Organization":{
           "shape":"Organization",
@@ -5641,6 +6938,10 @@
           "shape":"RdsDbInstanceDetails",
           "locationName":"rdsDbInstanceDetails"
         },
+        "RdsLimitlessDbDetails":{
+          "shape":"RdsLimitlessDbDetails",
+          "locationName":"rdsLimitlessDbDetails"
+        },
         "RdsDbUserDetails":{
           "shape":"RdsDbUserDetails",
           "locationName":"rdsDbUserDetails"
@@ -5655,6 +6956,31 @@
       "type":"string",
       "pattern":"^arn:[A-Za-z-]+:[A-Za-z0-9]+:[A-Za-z0-9-]+:\\d+:(([A-Za-z0-9-]+)[:\\/])?[A-Za-z0-9-]*$"
     },
+    "ResourceData":{
+      "type":"structure",
+      "members":{
+        "S3Bucket":{
+          "shape":"S3Bucket",
+          "locationName":"s3Bucket"
+        },
+        "Ec2Instance":{
+          "shape":"Ec2Instance",
+          "locationName":"ec2Instance"
+        },
+        "AccessKey":{
+          "shape":"AccessKey",
+          "locationName":"accessKey"
+        },
+        "Ec2NetworkInterface":{
+          "shape":"Ec2NetworkInterface",
+          "locationName":"ec2NetworkInterface"
+        },
+        "S3Object":{
+          "shape":"S3Object",
+          "locationName":"s3Object"
+        }
+      }
+    },
     "ResourceDetails":{
       "type":"structure",
       "members":{
@@ -5668,9 +6994,108 @@
       "type":"list",
       "member":{"shape":"String"}
     },
+    "ResourceNotFoundException":{
+      "type":"structure",
+      "members":{
+        "Message":{
+          "shape":"String",
+          "locationName":"message"
+        },
+        "Type":{
+          "shape":"String",
+          "locationName":"__type"
+        }
+      },
+      "error":{"httpStatusCode":404},
+      "exception":true
+    },
+    "ResourceStatistics":{
+      "type":"structure",
+      "members":{
+        "AccountId":{
+          "shape":"String",
+          "locationName":"accountId"
+        },
+        "LastGeneratedAt":{
+          "shape":"Timestamp",
+          "locationName":"lastGeneratedAt"
+        },
+        "ResourceId":{
+          "shape":"String",
+          "locationName":"resourceId"
+        },
+        "ResourceType":{
+          "shape":"String",
+          "locationName":"resourceType"
+        },
+        "TotalFindings":{
+          "shape":"Integer",
+          "locationName":"totalFindings"
+        }
+      }
+    },
     "ResourceType":{
       "type":"string",
-      "enum":["EKS"]
+      "enum":[
+        "EKS",
+        "ECS",
+        "EC2"
+      ]
+    },
+    "ResourceUids":{
+      "type":"list",
+      "member":{"shape":"String"},
+      "max":400
+    },
+    "ResourceV2":{
+      "type":"structure",
+      "required":[
+        "Uid",
+        "ResourceType"
+      ],
+      "members":{
+        "Uid":{
+          "shape":"String",
+          "locationName":"uid"
+        },
+        "Name":{
+          "shape":"String",
+          "locationName":"name"
+        },
+        "AccountId":{
+          "shape":"String",
+          "locationName":"accountId"
+        },
+        "ResourceType":{
+          "shape":"FindingResourceType",
+          "locationName":"resourceType"
+        },
+        "Region":{
+          "shape":"String",
+          "locationName":"region"
+        },
+        "Service":{
+          "shape":"String",
+          "locationName":"service"
+        },
+        "CloudPartition":{
+          "shape":"String",
+          "locationName":"cloudPartition"
+        },
+        "Tags":{
+          "shape":"Tags",
+          "locationName":"tags"
+        },
+        "Data":{
+          "shape":"ResourceData",
+          "locationName":"data"
+        }
+      }
+    },
+    "Resources":{
+      "type":"list",
+      "member":{"shape":"ResourceV2"},
+      "max":400
     },
     "RuntimeContext":{
       "type":"structure",
@@ -5754,6 +7179,26 @@
         "MemoryRegions":{
           "shape":"MemoryRegionsList",
           "locationName":"memoryRegions"
+        },
+        "ToolName":{
+          "shape":"String",
+          "locationName":"toolName"
+        },
+        "ToolCategory":{
+          "shape":"String",
+          "locationName":"toolCategory"
+        },
+        "ServiceName":{
+          "shape":"String",
+          "locationName":"serviceName"
+        },
+        "CommandLineExample":{
+          "shape":"String",
+          "locationName":"commandLineExample"
+        },
+        "ThreatFilePath":{
+          "shape":"String",
+          "locationName":"threatFilePath"
         }
       }
     },
@@ -5767,6 +7212,51 @@
         "Context":{
           "shape":"RuntimeContext",
           "locationName":"context"
+        }
+      }
+    },
+    "S3Bucket":{
+      "type":"structure",
+      "members":{
+        "OwnerId":{
+          "shape":"String",
+          "locationName":"ownerId"
+        },
+        "CreatedAt":{
+          "shape":"Timestamp",
+          "locationName":"createdAt"
+        },
+        "EncryptionType":{
+          "shape":"String",
+          "locationName":"encryptionType"
+        },
+        "EncryptionKeyArn":{
+          "shape":"String",
+          "locationName":"encryptionKeyArn"
+        },
+        "EffectivePermission":{
+          "shape":"String",
+          "locationName":"effectivePermission"
+        },
+        "PublicReadAccess":{
+          "shape":"PublicAccessStatus",
+          "locationName":"publicReadAccess"
+        },
+        "PublicWriteAccess":{
+          "shape":"PublicAccessStatus",
+          "locationName":"publicWriteAccess"
+        },
+        "AccountPublicAccess":{
+          "shape":"PublicAccessConfiguration",
+          "locationName":"accountPublicAccess"
+        },
+        "BucketPublicAccess":{
+          "shape":"PublicAccessConfiguration",
+          "locationName":"bucketPublicAccess"
+        },
+        "S3ObjectUids":{
+          "shape":"S3ObjectUids",
+          "locationName":"s3ObjectUids"
         }
       }
     },
@@ -5804,6 +7294,10 @@
         "PublicAccess":{
           "shape":"PublicAccess",
           "locationName":"publicAccess"
+        },
+        "S3ObjectDetails":{
+          "shape":"S3ObjectDetails",
+          "locationName":"s3ObjectDetails"
         }
       }
     },
@@ -5830,6 +7324,56 @@
           "locationName":"status"
         }
       }
+    },
+    "S3Object":{
+      "type":"structure",
+      "members":{
+        "ETag":{
+          "shape":"String",
+          "locationName":"eTag"
+        },
+        "Key":{
+          "shape":"String",
+          "locationName":"key"
+        },
+        "VersionId":{
+          "shape":"String",
+          "locationName":"versionId"
+        }
+      }
+    },
+    "S3ObjectDetail":{
+      "type":"structure",
+      "members":{
+        "ObjectArn":{
+          "shape":"String",
+          "locationName":"objectArn"
+        },
+        "Key":{
+          "shape":"String",
+          "locationName":"key"
+        },
+        "ETag":{
+          "shape":"String",
+          "locationName":"eTag"
+        },
+        "Hash":{
+          "shape":"String",
+          "locationName":"hash"
+        },
+        "VersionId":{
+          "shape":"String",
+          "locationName":"versionId"
+        }
+      }
+    },
+    "S3ObjectDetails":{
+      "type":"list",
+      "member":{"shape":"S3ObjectDetail"}
+    },
+    "S3ObjectUids":{
+      "type":"list",
+      "member":{"shape":"String"}
     },
     "Scan":{
       "type":"structure",
@@ -6086,6 +7630,10 @@
         "Privileged":{
           "shape":"Boolean",
           "locationName":"privileged"
+        },
+        "AllowPrivilegeEscalation":{
+          "shape":"Boolean",
+          "locationName":"allowPrivilegeEscalation"
         }
       }
     },
@@ -6105,6 +7653,52 @@
     "SecurityGroups":{
       "type":"list",
       "member":{"shape":"SecurityGroup"}
+    },
+    "SensitiveString":{
+      "type":"string",
+      "sensitive":true
+    },
+    "Sequence":{
+      "type":"structure",
+      "required":[
+        "Uid",
+        "Description",
+        "Signals"
+      ],
+      "members":{
+        "Uid":{
+          "shape":"String",
+          "locationName":"uid"
+        },
+        "Description":{
+          "shape":"SequenceDescription",
+          "locationName":"description"
+        },
+        "Actors":{
+          "shape":"Actors",
+          "locationName":"actors"
+        },
+        "Resources":{
+          "shape":"Resources",
+          "locationName":"resources"
+        },
+        "Endpoints":{
+          "shape":"NetworkEndpoints",
+          "locationName":"endpoints"
+        },
+        "Signals":{
+          "shape":"Signals",
+          "locationName":"signals"
+        },
+        "SequenceIndicators":{
+          "shape":"Indicators",
+          "locationName":"sequenceIndicators"
+        }
+      }
+    },
+    "SequenceDescription":{
+      "type":"string",
+      "max":4096
     },
     "Service":{
       "type":"structure",
@@ -6164,6 +7758,14 @@
         "RuntimeDetails":{
           "shape":"RuntimeDetails",
           "locationName":"runtimeDetails"
+        },
+        "Detection":{
+          "shape":"Detection",
+          "locationName":"detection"
+        },
+        "MalwareScanDetails":{
+          "shape":"MalwareScanDetails",
+          "locationName":"malwareScanDetails"
         }
       }
     },
@@ -6180,9 +7782,136 @@
         }
       }
     },
+    "Session":{
+      "type":"structure",
+      "members":{
+        "Uid":{
+          "shape":"String",
+          "locationName":"uid"
+        },
+        "MfaStatus":{
+          "shape":"MfaStatus",
+          "locationName":"mfaStatus"
+        },
+        "CreatedTime":{
+          "shape":"Timestamp",
+          "locationName":"createdTime"
+        },
+        "Issuer":{
+          "shape":"String",
+          "locationName":"issuer"
+        }
+      }
+    },
     "SessionNameList":{
       "type":"list",
       "member":{"shape":"String"}
+    },
+    "SeverityStatistics":{
+      "type":"structure",
+      "members":{
+        "LastGeneratedAt":{
+          "shape":"Timestamp",
+          "locationName":"lastGeneratedAt"
+        },
+        "Severity":{
+          "shape":"Double",
+          "locationName":"severity"
+        },
+        "TotalFindings":{
+          "shape":"Integer",
+          "locationName":"totalFindings"
+        }
+      }
+    },
+    "Signal":{
+      "type":"structure",
+      "required":[
+        "Uid",
+        "Type",
+        "Name",
+        "CreatedAt",
+        "UpdatedAt",
+        "FirstSeenAt",
+        "LastSeenAt",
+        "Count"
+      ],
+      "members":{
+        "Uid":{
+          "shape":"String",
+          "locationName":"uid"
+        },
+        "Type":{
+          "shape":"SignalType",
+          "locationName":"type"
+        },
+        "Description":{
+          "shape":"SignalDescription",
+          "locationName":"description"
+        },
+        "Name":{
+          "shape":"String",
+          "locationName":"name"
+        },
+        "CreatedAt":{
+          "shape":"Timestamp",
+          "locationName":"createdAt"
+        },
+        "UpdatedAt":{
+          "shape":"Timestamp",
+          "locationName":"updatedAt"
+        },
+        "FirstSeenAt":{
+          "shape":"Timestamp",
+          "locationName":"firstSeenAt"
+        },
+        "LastSeenAt":{
+          "shape":"Timestamp",
+          "locationName":"lastSeenAt"
+        },
+        "Severity":{
+          "shape":"Double",
+          "locationName":"severity"
+        },
+        "Count":{
+          "shape":"Integer",
+          "locationName":"count"
+        },
+        "ResourceUids":{
+          "shape":"ResourceUids",
+          "locationName":"resourceUids"
+        },
+        "ActorIds":{
+          "shape":"ActorIds",
+          "locationName":"actorIds"
+        },
+        "EndpointIds":{
+          "shape":"EndpointIds",
+          "locationName":"endpointIds"
+        },
+        "SignalIndicators":{
+          "shape":"Indicators",
+          "locationName":"signalIndicators"
+        }
+      }
+    },
+    "SignalDescription":{
+      "type":"string",
+      "max":2000
+    },
+    "SignalType":{
+      "type":"string",
+      "enum":[
+        "FINDING",
+        "CLOUD_TRAIL",
+        "S3_DATA_EVENTS"
+      ]
+    },
+    "Signals":{
+      "type":"list",
+      "member":{"shape":"Signal"},
+      "max":100,
+      "min":2
     },
     "SortCriteria":{
       "type":"structure",
@@ -6348,6 +8077,23 @@
       "type":"list",
       "member":{"shape":"Tag"}
     },
+    "Threat":{
+      "type":"structure",
+      "members":{
+        "Name":{
+          "shape":"String",
+          "locationName":"name"
+        },
+        "Source":{
+          "shape":"String",
+          "locationName":"source"
+        },
+        "ItemPaths":{
+          "shape":"ItemPaths",
+          "locationName":"itemPaths"
+        }
+      }
+    },
     "ThreatDetectedByName":{
       "type":"structure",
       "members":{
@@ -6412,6 +8158,10 @@
         "ThreatNames":{
           "shape":"ThreatNames",
           "locationName":"threatNames"
+        },
+        "ThreatFileSha256":{
+          "shape":"String",
+          "locationName":"threatFileSha256"
         }
       }
     },
@@ -6422,6 +8172,10 @@
     "ThreatNames":{
       "type":"list",
       "member":{"shape":"String"}
+    },
+    "Threats":{
+      "type":"list",
+      "member":{"shape":"Threat"}
     },
     "ThreatsDetectedItemCount":{
       "type":"structure",
@@ -6685,6 +8439,29 @@
       "members":{
       }
     },
+    "UpdateMalwareProtectionPlanRequest":{
+      "type":"structure",
+      "required":["MalwareProtectionPlanId"],
+      "members":{
+        "MalwareProtectionPlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"malwareProtectionPlanId"
+        },
+        "Role":{
+          "shape":"String",
+          "locationName":"role"
+        },
+        "Actions":{
+          "shape":"MalwareProtectionPlanActions",
+          "locationName":"actions"
+        },
+        "ProtectedResource":{
+          "shape":"UpdateProtectedResource",
+          "locationName":"protectedResource"
+        }
+      }
+    },
     "UpdateMalwareScanSettingsRequest":{
       "type":"structure",
       "required":["DetectorId"],
@@ -6783,6 +8560,15 @@
       "members":{
       }
     },
+    "UpdateProtectedResource":{
+      "type":"structure",
+      "members":{
+        "S3Bucket":{
+          "shape":"UpdateS3BucketResource",
+          "locationName":"s3Bucket"
+        }
+      }
+    },
     "UpdatePublishingDestinationRequest":{
       "type":"structure",
       "required":[
@@ -6809,6 +8595,15 @@
     "UpdatePublishingDestinationResponse":{
       "type":"structure",
       "members":{
+      }
+    },
+    "UpdateS3BucketResource":{
+      "type":"structure",
+      "members":{
+        "ObjectPrefixes":{
+          "shape":"MalwareProtectionPlanObjectPrefixesList",
+          "locationName":"objectPrefixes"
+        }
       }
     },
     "UpdateThreatIntelSetRequest":{
@@ -6915,7 +8710,11 @@
         "EBS_MALWARE_PROTECTION",
         "RDS_LOGIN_EVENTS",
         "LAMBDA_NETWORK_LOGS",
-        "EKS_RUNTIME_MONITORING"
+        "EKS_RUNTIME_MONITORING",
+        "FARGATE_RUNTIME_MONITORING",
+        "EC2_RUNTIME_MONITORING",
+        "RDS_DBI_PROTECTION_PROVISIONED",
+        "RDS_DBI_PROTECTION_SERVERLESS"
       ]
     },
     "UsageFeatureList":{
@@ -6963,7 +8762,8 @@
         "SUM_BY_DATA_SOURCE",
         "SUM_BY_RESOURCE",
         "TOP_RESOURCES",
-        "SUM_BY_FEATURES"
+        "SUM_BY_FEATURES",
+        "TOP_ACCOUNTS_BY_FEATURE"
       ]
     },
     "UsageStatistics":{
@@ -6972,6 +8772,10 @@
         "SumByAccount":{
           "shape":"UsageAccountResultList",
           "locationName":"sumByAccount"
+        },
+        "TopAccountsByFeature":{
+          "shape":"UsageTopAccountsResultList",
+          "locationName":"topAccountsByFeature"
         },
         "SumByDataSource":{
           "shape":"UsageDataSourceResultList",
@@ -6988,6 +8792,70 @@
         "SumByFeature":{
           "shape":"UsageFeatureResultList",
           "locationName":"sumByFeature"
+        }
+      }
+    },
+    "UsageTopAccountResult":{
+      "type":"structure",
+      "members":{
+        "AccountId":{
+          "shape":"AccountId",
+          "locationName":"accountId"
+        },
+        "Total":{
+          "shape":"Total",
+          "locationName":"total"
+        }
+      }
+    },
+    "UsageTopAccountsByFeatureList":{
+      "type":"list",
+      "member":{"shape":"UsageTopAccountResult"}
+    },
+    "UsageTopAccountsResult":{
+      "type":"structure",
+      "members":{
+        "Feature":{
+          "shape":"UsageFeature",
+          "locationName":"feature"
+        },
+        "Accounts":{
+          "shape":"UsageTopAccountsByFeatureList",
+          "locationName":"accounts"
+        }
+      }
+    },
+    "UsageTopAccountsResultList":{
+      "type":"list",
+      "member":{"shape":"UsageTopAccountsResult"}
+    },
+    "User":{
+      "type":"structure",
+      "required":[
+        "Name",
+        "Uid",
+        "Type"
+      ],
+      "members":{
+        "Name":{
+          "shape":"String",
+          "locationName":"name"
+        },
+        "Uid":{
+          "shape":"String",
+          "locationName":"uid"
+        },
+        "Type":{
+          "shape":"String",
+          "locationName":"type"
+        },
+        "CredentialUid":{
+          "shape":"String",
+          "locationName":"credentialUid"
+        },
+        "Account":{
+          "shape":"Account",
+          "locationName":"account"
         }
       }
     },

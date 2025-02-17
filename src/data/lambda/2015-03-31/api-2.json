@@ -4,10 +4,12 @@
     "apiVersion":"2015-03-31",
     "endpointPrefix":"lambda",
     "protocol":"rest-json",
+    "protocols":["rest-json"],
     "serviceFullName":"AWS Lambda",
     "serviceId":"Lambda",
     "signatureVersion":"v4",
-    "uid":"lambda-2015-03-31"
+    "uid":"lambda-2015-03-31",
+    "auth":["aws.auth#sigv4"]
   },
   "operations":{
     "AddLayerVersionPermission":{
@@ -431,6 +433,22 @@
         {"shape":"ResourceNotFoundException"},
         {"shape":"InvalidParameterValueException"},
         {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetFunctionRecursionConfig":{
+      "name":"GetFunctionRecursionConfig",
+      "http":{
+        "method":"GET",
+        "requestUri":"/2024-08-31/functions/{FunctionName}/recursion-config",
+        "responseCode":200
+      },
+      "input":{"shape":"GetFunctionRecursionConfigRequest"},
+      "output":{"shape":"GetFunctionRecursionConfigResponse"},
+      "errors":[
+        {"shape":"InvalidParameterValueException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ServiceException"}
       ]
     },
     "GetFunctionUrlConfig":{
@@ -920,6 +938,23 @@
         {"shape":"ResourceConflictException"}
       ]
     },
+    "PutFunctionRecursionConfig":{
+      "name":"PutFunctionRecursionConfig",
+      "http":{
+        "method":"PUT",
+        "requestUri":"/2024-08-31/functions/{FunctionName}/recursion-config",
+        "responseCode":200
+      },
+      "input":{"shape":"PutFunctionRecursionConfigRequest"},
+      "output":{"shape":"PutFunctionRecursionConfigResponse"},
+      "errors":[
+        {"shape":"InvalidParameterValueException"},
+        {"shape":"ResourceConflictException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ServiceException"}
+      ]
+    },
     "PutProvisionedConcurrencyConfig":{
       "name":"PutProvisionedConcurrencyConfig",
       "http":{
@@ -1305,6 +1340,17 @@
         "ConsumerGroupId":{"shape":"URI"}
       }
     },
+    "ApplicationLogLevel":{
+      "type":"string",
+      "enum":[
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR",
+        "FATAL"
+      ]
+    },
     "Architecture":{
       "type":"string",
       "enum":[
@@ -1466,7 +1512,8 @@
       "members":{
         "Description":{"shape":"Description"},
         "AllowedPublishers":{"shape":"AllowedPublishers"},
-        "CodeSigningPolicies":{"shape":"CodeSigningPolicies"}
+        "CodeSigningPolicies":{"shape":"CodeSigningPolicies"},
+        "Tags":{"shape":"Tags"}
       }
     },
     "CreateCodeSigningConfigResponse":{
@@ -1493,6 +1540,7 @@
         "MaximumRecordAgeInSeconds":{"shape":"MaximumRecordAgeInSeconds"},
         "BisectBatchOnFunctionError":{"shape":"BisectBatchOnFunctionError"},
         "MaximumRetryAttempts":{"shape":"MaximumRetryAttemptsEventSourceMapping"},
+        "Tags":{"shape":"Tags"},
         "TumblingWindowInSeconds":{"shape":"TumblingWindowInSeconds"},
         "Topics":{"shape":"Topics"},
         "Queues":{"shape":"Queues"},
@@ -1502,7 +1550,10 @@
         "AmazonManagedKafkaEventSourceConfig":{"shape":"AmazonManagedKafkaEventSourceConfig"},
         "SelfManagedKafkaEventSourceConfig":{"shape":"SelfManagedKafkaEventSourceConfig"},
         "ScalingConfig":{"shape":"ScalingConfig"},
-        "DocumentDBEventSourceConfig":{"shape":"DocumentDBEventSourceConfig"}
+        "DocumentDBEventSourceConfig":{"shape":"DocumentDBEventSourceConfig"},
+        "KMSKeyArn":{"shape":"KMSKeyArn"},
+        "MetricsConfig":{"shape":"EventSourceMappingMetricsConfig"},
+        "ProvisionedPollerConfig":{"shape":"ProvisionedPollerConfig"}
       }
     },
     "CreateFunctionRequest":{
@@ -1535,7 +1586,8 @@
         "CodeSigningConfigArn":{"shape":"CodeSigningConfigArn"},
         "Architectures":{"shape":"ArchitecturesList"},
         "EphemeralStorage":{"shape":"EphemeralStorage"},
-        "SnapStart":{"shape":"SnapStart"}
+        "SnapStart":{"shape":"SnapStart"},
+        "LoggingConfig":{"shape":"LoggingConfig"}
       }
     },
     "CreateFunctionUrlConfigRequest":{
@@ -1914,6 +1966,12 @@
       "max":10240,
       "min":512
     },
+    "EventSourceMappingArn":{
+      "type":"string",
+      "max":120,
+      "min":85,
+      "pattern":"arn:(aws[a-zA-Z-]*)?:lambda:[a-z]{2}((-gov)|(-iso([a-z]?)))?-[a-z]+-\\d{1}:\\d{12}:event-source-mapping:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+    },
     "EventSourceMappingConfiguration":{
       "type":"structure",
       "members":{
@@ -1943,7 +2001,28 @@
         "AmazonManagedKafkaEventSourceConfig":{"shape":"AmazonManagedKafkaEventSourceConfig"},
         "SelfManagedKafkaEventSourceConfig":{"shape":"SelfManagedKafkaEventSourceConfig"},
         "ScalingConfig":{"shape":"ScalingConfig"},
-        "DocumentDBEventSourceConfig":{"shape":"DocumentDBEventSourceConfig"}
+        "DocumentDBEventSourceConfig":{"shape":"DocumentDBEventSourceConfig"},
+        "KMSKeyArn":{"shape":"KMSKeyArn"},
+        "FilterCriteriaError":{"shape":"FilterCriteriaError"},
+        "EventSourceMappingArn":{"shape":"EventSourceMappingArn"},
+        "MetricsConfig":{"shape":"EventSourceMappingMetricsConfig"},
+        "ProvisionedPollerConfig":{"shape":"ProvisionedPollerConfig"}
+      }
+    },
+    "EventSourceMappingMetric":{
+      "type":"string",
+      "enum":["EventCount"]
+    },
+    "EventSourceMappingMetricList":{
+      "type":"list",
+      "member":{"shape":"EventSourceMappingMetric"},
+      "max":1,
+      "min":0
+    },
+    "EventSourceMappingMetricsConfig":{
+      "type":"structure",
+      "members":{
+        "Metrics":{"shape":"EventSourceMappingMetricList"}
       }
     },
     "EventSourceMappingsList":{
@@ -1997,6 +2076,25 @@
         "Filters":{"shape":"FilterList"}
       }
     },
+    "FilterCriteriaError":{
+      "type":"structure",
+      "members":{
+        "ErrorCode":{"shape":"FilterCriteriaErrorCode"},
+        "Message":{"shape":"FilterCriteriaErrorMessage"}
+      }
+    },
+    "FilterCriteriaErrorCode":{
+      "type":"string",
+      "max":50,
+      "min":10,
+      "pattern":"[A-Za-z]+Exception"
+    },
+    "FilterCriteriaErrorMessage":{
+      "type":"string",
+      "max":2048,
+      "min":10,
+      "pattern":".*"
+    },
     "FilterList":{
       "type":"list",
       "member":{"shape":"Filter"}
@@ -2023,7 +2121,8 @@
         "S3Bucket":{"shape":"S3Bucket"},
         "S3Key":{"shape":"S3Key"},
         "S3ObjectVersion":{"shape":"S3ObjectVersion"},
-        "ImageUri":{"shape":"String"}
+        "ImageUri":{"shape":"String"},
+        "SourceKMSKeyArn":{"shape":"KMSKeyArn"}
       }
     },
     "FunctionCodeLocation":{
@@ -2032,7 +2131,8 @@
         "RepositoryType":{"shape":"String"},
         "Location":{"shape":"String"},
         "ImageUri":{"shape":"String"},
-        "ResolvedImageUri":{"shape":"String"}
+        "ResolvedImageUri":{"shape":"String"},
+        "SourceKMSKeyArn":{"shape":"String"}
       }
     },
     "FunctionConfiguration":{
@@ -2072,7 +2172,8 @@
         "Architectures":{"shape":"ArchitecturesList"},
         "EphemeralStorage":{"shape":"EphemeralStorage"},
         "SnapStart":{"shape":"SnapStartResponse"},
-        "RuntimeVersionConfig":{"shape":"RuntimeVersionConfig"}
+        "RuntimeVersionConfig":{"shape":"RuntimeVersionConfig"},
+        "LoggingConfig":{"shape":"LoggingConfig"}
       }
     },
     "FunctionEventInvokeConfig":{
@@ -2285,6 +2386,23 @@
         }
       }
     },
+    "GetFunctionRecursionConfigRequest":{
+      "type":"structure",
+      "required":["FunctionName"],
+      "members":{
+        "FunctionName":{
+          "shape":"UnqualifiedFunctionName",
+          "location":"uri",
+          "locationName":"FunctionName"
+        }
+      }
+    },
+    "GetFunctionRecursionConfigResponse":{
+      "type":"structure",
+      "members":{
+        "RecursiveLoop":{"shape":"RecursiveLoop"}
+      }
+    },
     "GetFunctionRequest":{
       "type":"structure",
       "required":["FunctionName"],
@@ -2307,6 +2425,7 @@
         "Configuration":{"shape":"FunctionConfiguration"},
         "Code":{"shape":"FunctionCodeLocation"},
         "Tags":{"shape":"Tags"},
+        "TagsError":{"shape":"TagsError"},
         "Concurrency":{"shape":"Concurrency"}
       }
     },
@@ -3254,7 +3373,7 @@
       "required":["Resource"],
       "members":{
         "Resource":{
-          "shape":"FunctionArn",
+          "shape":"TaggableResource",
           "location":"uri",
           "locationName":"ARN"
         }
@@ -3299,12 +3418,34 @@
       "max":160,
       "pattern":"^/mnt/[a-zA-Z0-9-_.]+$"
     },
+    "LogFormat":{
+      "type":"string",
+      "enum":[
+        "JSON",
+        "Text"
+      ]
+    },
+    "LogGroup":{
+      "type":"string",
+      "max":512,
+      "min":1,
+      "pattern":"[\\.\\-_/#A-Za-z0-9]+"
+    },
     "LogType":{
       "type":"string",
       "enum":[
         "None",
         "Tail"
       ]
+    },
+    "LoggingConfig":{
+      "type":"structure",
+      "members":{
+        "LogFormat":{"shape":"LogFormat"},
+        "ApplicationLogLevel":{"shape":"ApplicationLogLevel"},
+        "SystemLogLevel":{"shape":"SystemLogLevel"},
+        "LogGroup":{"shape":"LogGroup"}
+      }
     },
     "Long":{"type":"long"},
     "MasterRegion":{
@@ -3356,6 +3497,11 @@
       "max":21600,
       "min":60
     },
+    "MaximumNumberOfPollers":{
+      "type":"integer",
+      "max":2000,
+      "min":1
+    },
     "MaximumRecordAgeInSeconds":{
       "type":"integer",
       "max":604800,
@@ -3381,6 +3527,11 @@
       "max":6,
       "pattern":".*"
     },
+    "MinimumNumberOfPollers":{
+      "type":"integer",
+      "max":200,
+      "min":1
+    },
     "NameSpacedFunctionArn":{
       "type":"string",
       "pattern":"arn:(aws[a-zA-Z-]*)?:lambda:[a-z]{2}(-gov)?-[a-z]+-\\d{1}:\\d{12}:function:[a-zA-Z0-9-_\\.]+(:(\\$LATEST|[a-zA-Z0-9-_]+))?"
@@ -3401,6 +3552,7 @@
       "type":"integer",
       "min":0
     },
+    "NullableBoolean":{"type":"boolean"},
     "OnFailure":{
       "type":"structure",
       "members":{
@@ -3506,6 +3658,13 @@
         "READY",
         "FAILED"
       ]
+    },
+    "ProvisionedPollerConfig":{
+      "type":"structure",
+      "members":{
+        "MinimumPollers":{"shape":"MinimumNumberOfPollers"},
+        "MaximumPollers":{"shape":"MaximumNumberOfPollers"}
+      }
     },
     "PublishLayerVersionRequest":{
       "type":"structure",
@@ -3614,6 +3773,27 @@
         "DestinationConfig":{"shape":"DestinationConfig"}
       }
     },
+    "PutFunctionRecursionConfigRequest":{
+      "type":"structure",
+      "required":[
+        "FunctionName",
+        "RecursiveLoop"
+      ],
+      "members":{
+        "FunctionName":{
+          "shape":"UnqualifiedFunctionName",
+          "location":"uri",
+          "locationName":"FunctionName"
+        },
+        "RecursiveLoop":{"shape":"RecursiveLoop"}
+      }
+    },
+    "PutFunctionRecursionConfigResponse":{
+      "type":"structure",
+      "members":{
+        "RecursiveLoop":{"shape":"RecursiveLoop"}
+      }
+    },
     "PutProvisionedConcurrencyConfigRequest":{
       "type":"structure",
       "required":[
@@ -3705,6 +3885,13 @@
       },
       "error":{"httpStatusCode":400},
       "exception":true
+    },
+    "RecursiveLoop":{
+      "type":"string",
+      "enum":[
+        "Allow",
+        "Terminate"
+      ]
     },
     "RemoveLayerVersionPermissionRequest":{
       "type":"structure",
@@ -3853,6 +4040,7 @@
         "dotnetcore2.1",
         "dotnetcore3.1",
         "dotnet6",
+        "dotnet8",
         "nodejs4.3-edge",
         "go1.x",
         "ruby2.5",
@@ -3863,7 +4051,14 @@
         "python3.10",
         "java17",
         "ruby3.2",
-        "python3.11"
+        "ruby3.3",
+        "python3.11",
+        "nodejs20.x",
+        "provided.al2023",
+        "python3.12",
+        "java21",
+        "python3.13",
+        "nodejs22.x"
       ]
     },
     "RuntimeVersionArn":{
@@ -4096,6 +4291,14 @@
       "member":{"shape":"SubnetId"},
       "max":16
     },
+    "SystemLogLevel":{
+      "type":"string",
+      "enum":[
+        "DEBUG",
+        "INFO",
+        "WARN"
+      ]
+    },
     "TagKey":{"type":"string"},
     "TagKeyList":{
       "type":"list",
@@ -4109,7 +4312,7 @@
       ],
       "members":{
         "Resource":{
-          "shape":"FunctionArn",
+          "shape":"TaggableResource",
           "location":"uri",
           "locationName":"ARN"
         },
@@ -4117,10 +4320,39 @@
       }
     },
     "TagValue":{"type":"string"},
+    "TaggableResource":{
+      "type":"string",
+      "max":256,
+      "min":1,
+      "pattern":"arn:(aws[a-zA-Z-]*):lambda:[a-z]{2}((-gov)|(-iso([a-z]?)))?-[a-z]+-\\d{1}:\\d{12}:(function:[a-zA-Z0-9-_]+(:(\\$LATEST|[a-zA-Z0-9-_]+))?|code-signing-config:csc-[a-z0-9]{17}|event-source-mapping:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+    },
     "Tags":{
       "type":"map",
       "key":{"shape":"TagKey"},
       "value":{"shape":"TagValue"}
+    },
+    "TagsError":{
+      "type":"structure",
+      "required":[
+        "ErrorCode",
+        "Message"
+      ],
+      "members":{
+        "ErrorCode":{"shape":"TagsErrorCode"},
+        "Message":{"shape":"TagsErrorMessage"}
+      }
+    },
+    "TagsErrorCode":{
+      "type":"string",
+      "max":21,
+      "min":10,
+      "pattern":"[A-Za-z]+Exception"
+    },
+    "TagsErrorMessage":{
+      "type":"string",
+      "max":1000,
+      "min":84,
+      "pattern":"^.*$"
     },
     "ThrottleReason":{
       "type":"string",
@@ -4195,6 +4427,12 @@
       "min":1,
       "pattern":"[a-zA-Z0-9-\\/*:_+=.@-]*"
     },
+    "UnqualifiedFunctionName":{
+      "type":"string",
+      "max":140,
+      "min":1,
+      "pattern":"(arn:(aws[a-zA-Z-]*)?:lambda:)?([a-z]{2}((-gov)|(-iso([a-z]?)))?-[a-z]+-\\d{1}:)?(\\d{12}:)?(function:)?([a-zA-Z0-9-_]+)"
+    },
     "UnreservedConcurrentExecutions":{
       "type":"integer",
       "min":0
@@ -4216,7 +4454,7 @@
       ],
       "members":{
         "Resource":{
-          "shape":"FunctionArn",
+          "shape":"TaggableResource",
           "location":"uri",
           "locationName":"ARN"
         },
@@ -4294,7 +4532,10 @@
         "TumblingWindowInSeconds":{"shape":"TumblingWindowInSeconds"},
         "FunctionResponseTypes":{"shape":"FunctionResponseTypeList"},
         "ScalingConfig":{"shape":"ScalingConfig"},
-        "DocumentDBEventSourceConfig":{"shape":"DocumentDBEventSourceConfig"}
+        "DocumentDBEventSourceConfig":{"shape":"DocumentDBEventSourceConfig"},
+        "KMSKeyArn":{"shape":"KMSKeyArn"},
+        "MetricsConfig":{"shape":"EventSourceMappingMetricsConfig"},
+        "ProvisionedPollerConfig":{"shape":"ProvisionedPollerConfig"}
       }
     },
     "UpdateFunctionCodeRequest":{
@@ -4314,7 +4555,8 @@
         "Publish":{"shape":"Boolean"},
         "DryRun":{"shape":"Boolean"},
         "RevisionId":{"shape":"String"},
-        "Architectures":{"shape":"ArchitecturesList"}
+        "Architectures":{"shape":"ArchitecturesList"},
+        "SourceKMSKeyArn":{"shape":"KMSKeyArn"}
       }
     },
     "UpdateFunctionConfigurationRequest":{
@@ -4342,7 +4584,8 @@
         "FileSystemConfigs":{"shape":"FileSystemConfigList"},
         "ImageConfig":{"shape":"ImageConfig"},
         "EphemeralStorage":{"shape":"EphemeralStorage"},
-        "SnapStart":{"shape":"SnapStart"}
+        "SnapStart":{"shape":"SnapStart"},
+        "LoggingConfig":{"shape":"LoggingConfig"}
       }
     },
     "UpdateFunctionEventInvokeConfigRequest":{
@@ -4420,7 +4663,8 @@
       "type":"structure",
       "members":{
         "SubnetIds":{"shape":"SubnetIds"},
-        "SecurityGroupIds":{"shape":"SecurityGroupIds"}
+        "SecurityGroupIds":{"shape":"SecurityGroupIds"},
+        "Ipv6AllowedForDualStack":{"shape":"NullableBoolean"}
       }
     },
     "VpcConfigResponse":{
@@ -4428,7 +4672,8 @@
       "members":{
         "SubnetIds":{"shape":"SubnetIds"},
         "SecurityGroupIds":{"shape":"SecurityGroupIds"},
-        "VpcId":{"shape":"VpcId"}
+        "VpcId":{"shape":"VpcId"},
+        "Ipv6AllowedForDualStack":{"shape":"NullableBoolean"}
       }
     },
     "VpcId":{"type":"string"},

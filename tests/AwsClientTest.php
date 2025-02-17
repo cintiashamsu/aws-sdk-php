@@ -10,6 +10,8 @@ use Aws\Ec2\Ec2Client;
 use Aws\Endpoint\UseFipsEndpoint\Configuration as FipsConfiguration;
 use Aws\Endpoint\UseDualStackEndpoint\Configuration as DualStackConfiguration;
 use Aws\EndpointV2\EndpointProviderV2;
+use Aws\MetricsBuilder;
+use Aws\Middleware;
 use Aws\ResultPaginator;
 use Aws\S3\Exception\S3Exception;
 use Aws\Ses\SesClient;
@@ -18,10 +20,11 @@ use Aws\Result;
 use Aws\S3\S3Client;
 use Aws\Signature\SignatureV4;
 use Aws\Sts\StsClient;
+use Aws\Token\Token;
 use Aws\Waiter;
 use Aws\WrappedHttpHandler;
-use Exception;
 use GuzzleHttp\Promise\RejectedPromise;
+use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
@@ -31,6 +34,8 @@ use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 class AwsClientTest extends TestCase
 {
     use UsesServiceTrait;
+    use TestServiceTrait;
+    use MetricsBuilderTestTrait;
 
     private function getApiProvider()
     {
@@ -342,34 +347,72 @@ class AwsClientTest extends TestCase
         $client->bar();
     }
 
-    public function testSignOperationsWithAnAuthType()
+    /**
+     * @param $service
+     * @param $clientConfig
+     *
+     * @dataProvider signOperationsWithAnAuthTypeProvider
+     */
+    public function testSignOperationsWithAnAuthType($service, $clientConfig)
     {
-        $client = $this->createHttpsEndpointClient(
+        $client = $this->createHttpsEndpointClient($service, $clientConfig);
+        $client->bar();
+    }
+
+    public function signOperationsWithAnAuthTypeProvider()
+    {
+        return [
             [
-                'metadata' => [
-                    'signatureVersion' => 'v4',
-                ],
-                'operations' => [
-                    'Bar' => [
-                        'http' => ['method' => 'POST'],
-                        'authtype' => 'v4-unsigned-body',
+                [
+                    'metadata' => [
+                        'signatureVersion' => 'v4',
+                    ],
+                    'operations' => [
+                        'Bar' => [
+                            'http' => ['method' => 'POST'],
+                            'authtype' => 'v4-unsigned-body',
+                        ],
                     ],
                 ],
+                [
+                    'handler' => function (
+                        CommandInterface $command,
+                        RequestInterface $request
+                    ) {
+                        foreach (['Authorization','X-Amz-Content-Sha256', 'X-Amz-Date'] as $signatureHeader) {
+                            $this->assertTrue($request->hasHeader($signatureHeader));
+                        }
+                        $this->assertSame('UNSIGNED-PAYLOAD', $request->getHeader('X-Amz-Content-Sha256')[0]);
+                        return new Result;
+                    }
+                ]
             ],
             [
-                'handler' => function (
-                    CommandInterface $command,
-                    RequestInterface $request
-                ) {
-                    foreach (['Authorization','X-Amz-Content-Sha256', 'X-Amz-Date'] as $signatureHeader) {
-                        $this->assertTrue($request->hasHeader($signatureHeader));
-                    }
-                    $this->assertSame('UNSIGNED-PAYLOAD', $request->getHeader('X-Amz-Content-Sha256')[0]);
-                    return new Result;
-                }
+                [
+                    'metadata' => [
+                        'signatureVersion' => 'v4',
+                    ],
+                    'operations' => [
+                        'Bar' => [
+                            'http' => ['method' => 'POST'],
+                            'authtype' => 'bearer',
+                        ],
+                    ],
+                ],
+                [
+                    'handler' => function (
+                        CommandInterface $command,
+                        RequestInterface $request
+                    ) {
+
+                        $this->assertTrue($request->hasHeader('Authorization'));
+                        $this->assertSame('Bearer foo', $request->getHeader('Authorization')[0]);
+                        return new Result;
+                    },
+                    'token' => new Token('foo', time() + 1000)
+                ]
             ]
-        );
-        $client->bar();
+        ];
     }
 
     public function testUsesCommandContextSigningRegionAndService()
@@ -472,7 +515,8 @@ class AwsClientTest extends TestCase
                 'use_fips_endpoint' => new FipsConfiguration(false),
                 'use_dual_stack_endpoint' => new DualStackConfiguration(false, "foo"),
                 'disable_request_compression' => false,
-                'request_min_compression_size_bytes' => 10240
+                'request_min_compression_size_bytes' => 10240,
+                'ignore_configured_endpoint_urls' => false
             ],
             $client->getConfig()
         );
@@ -503,6 +547,7 @@ class AwsClientTest extends TestCase
             'AWS::UseFIPS' => false,
             'AWS::UseDualStack' => false,
             'AWS::STS::UseGlobalEndpoint' => true,
+            'AWS::Auth::AccountIdEndpointMode' => 'preferred',
         ];
         $builtIns = $client->getClientBuiltIns();
         $this->assertEquals(
@@ -523,6 +568,7 @@ class AwsClientTest extends TestCase
             'UseFIPS' => false,
             'UseDualStack' => false,
             'UseGlobalEndpoint' => true,
+            'AccountIdEndpointMode' => 'preferred'
         ];
         $providerArgs = $client->getEndpointProviderArgs();
         $this->assertEquals(
@@ -551,6 +597,318 @@ class AwsClientTest extends TestCase
         $this->assertFalse(
             $providerArgs['UseGlobalEndpoint']
         );
+    }
+
+    /** @dataProvider configuredEndpointUrlProvider */
+    public function testAppliesConfiguredEndpointUrl($ini, $env, $expected)
+    {
+        $dir = sys_get_temp_dir() . '/.aws';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        file_put_contents($dir . '/config', $ini);
+        $home = getenv('HOME');
+        putenv('HOME=' . dirname($dir));
+
+        if ($env) {
+            putenv($env['key'] . '=' . $env['value']);
+        }
+
+       $client = new StsClient([
+           'region' => 'us-west-2'
+       ]);
+
+        $this->assertTrue($client->getConfig()['configured_endpoint_url']);
+        $this->assertEquals($expected, $client->getClientBuiltIns()['SDK::Endpoint']);
+        $this->assertEquals($expected, $client->getEndpointProviderArgs()['Endpoint']);
+
+        unlink($dir . '/config');
+        putenv("HOME=$home");
+
+        if ($env) {
+            putenv($env['key'] . '=');
+        }
+    }
+
+    /** @dataProvider configuredEndpointUrlProvider */
+    public function testDoesNotApplyConfiguredEndpointWhenConfiguredUrlsIgnored($ini, $env)
+    {
+        putenv('AWS_IGNORE_CONFIGURED_ENDPOINT_URLS=true');
+
+        $dir = sys_get_temp_dir() . '/.aws';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        file_put_contents($dir . '/config', $ini);
+        $home = getenv('HOME');
+        putenv('HOME=' . dirname($dir));
+
+        if ($env) {
+            putenv($env['key'] . '=' . $env['value']);
+        }
+
+        $client = new StsClient([
+            'region' => 'us-west-2'
+        ]);
+
+        $this->assertFalse(isset($client->getConfig()['configured_endpoint_url']));
+        $this->assertNull( $client->getClientBuiltIns()['SDK::Endpoint']);
+        $this->assertNull($client->getEndpointProviderArgs()['Endpoint']);
+
+        unlink($dir . '/config');
+        putenv("HOME=$home");
+
+        if ($env) {
+            putenv($env['key'] . '=');
+        }
+
+        putenv('AWS_IGNORE_CONFIGURED_ENDPOINT_URLS=');
+    }
+
+    public function configuredEndpointUrlProvider()
+    {
+        return [
+            [
+                <<<EOT
+[default]
+endpoint_url = https://foo-bar.com
+services = my-services
+[services my-services]
+sts =
+  endpoint_url = https://test-foo.com
+EOT
+                ,
+                ['key' => 'AWS_ENDPOINT_URL_STS', 'value' => 'https://test.com'],
+                'https://test.com',
+            ],
+            [
+                <<<EOT
+[default]
+endpoint_url = https://foo-bar.com
+services = my-services
+[services my-services]
+sts =
+  endpoint_url = https://test-foo.com
+EOT
+                ,
+                null,
+                'https://test-foo.com',
+            ],
+            [
+                <<<EOT
+[default]
+endpoint_url = https://foo-bar.com
+EOT
+                ,
+                ['key' => 'AWS_ENDPOINT_URL', 'value' => 'https://baz.com'],
+                'https://baz.com',
+            ],
+            [
+                <<<EOT
+[default]
+endpoint_url = https://foo-bar.com
+EOT
+                ,
+                null,
+                'https://foo-bar.com',
+            ]
+        ];
+    }
+
+    public function testAppliesConfiguredSignatureVersionViaFalseCredentials()
+    {
+        $client = new S3Client([
+            'region' => 'us-west-2',
+            'handler' => new MockHandler([new Result([])]),
+            'credentials' => false
+        ]);
+
+        $this->assertTrue($client->getConfig('configured_signature_version'));
+
+        $list = $client->getHandlerList();
+        $list->appendSign(Middleware::tap(function($cmd, $req) {
+            foreach (['Authorization', 'X-Amz-Date'] as $signatureHeader) {
+                $this->assertFalse($req->hasHeader($signatureHeader));
+            }
+        }));
+
+        $client->putObject([
+            'Bucket' => 'foo',
+            'Key' => 'bar',
+            'Body' => 'test'
+        ]);
+    }
+
+    public function testAppliesConfiguredSignatureVersionViaClientConfig() {
+        $client = $this->createClient(
+            [
+                'metadata' => [
+                    'signatureVersion' => 'v4',
+                ],
+                'operations' => [
+                    'Foo' => [
+                        'http' => ['method' => 'POST'],
+                        'authtype' => 'none',
+                    ],
+                ],
+            ],
+            [
+                'handler' => function (
+                    CommandInterface $command,
+                    RequestInterface $request
+                ) {
+                    foreach (['Authorization', 'X-Amz-Date'] as $signatureHeader) {
+                        $this->assertTrue($request->hasHeader($signatureHeader));
+                    }
+
+                    return new Result;
+                },
+                'signature_version' => 'v4'
+            ]
+        );
+
+        $client->foo();
+    }
+
+
+    public function testCallingEmitDeprecationWarningEmitsDeprecationWarning()
+    {
+        $this->expectDeprecation();
+        $this->expectDeprecationMessage(
+            "This method is deprecated. It will be removed in an upcoming release."
+        );
+        $client = $this->createClient();
+        $client::emitDeprecationWarning();
+    }
+
+    /**
+     * @dataProvider signingRegionSetProvider
+     * @runInSeparateProcess
+     */
+    public function testSigningRegionSetResolution(
+        $command,
+        $env,
+        $ini,
+        $clientSetting,
+        $expected
+    ){
+        if (!extension_loaded('awscrt')) {
+            $this->markTestSkipped();
+        }
+
+        if ($env) {
+            putenv('AWS_SIGV4A_SIGNING_REGION_SET=' . $env);
+        }
+
+        if ($ini) {
+            $dir = sys_get_temp_dir() . '/.aws';
+            if (!is_dir($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            file_put_contents($dir . '/config', $ini);
+            $home = getenv('HOME');
+            putenv('HOME=' . dirname($dir));
+        }
+
+        $client = $this->createClient(
+            [
+                'metadata' => [
+                    'signatureVersion' => 'v4a',
+                ],
+                'operations' => [
+                    'Foo' => [
+                        'http' => ['method' => 'POST'],
+                    ],
+                ],
+            ],
+            [
+                'handler' => function (
+                    CommandInterface $command,
+                    RequestInterface $request
+                ) use ($expected) {
+                    $this->assertEquals($expected, $request->getHeaderLine('x-amz-region-set'));
+                    return new Result;
+                },
+                'signature_version' => 'v4a',
+                'region' => 'us-west-2',
+                'sigv4a_signing_region_set' => $clientSetting ?? null
+            ]
+        );
+
+        $client->foo([
+            '@context' => [
+                'signing_region_set' => $command ?? null
+            ]
+        ]);
+
+        if ($ini) {
+            unlink($dir . '/config');
+            putenv("HOME=$home");
+        }
+
+        putenv('AWS_SIGV4A_SIGNING_REGION_SET=');
+    }
+
+    public function signingRegionSetProvider()
+    {
+        return [
+            [null, null, null, null, 'us-west-2'],
+            [['*'], null, null, null, '*'],
+            [null, '*', null, null, '*'],
+            [
+                null,
+                null,
+                <<<EOT
+[default]
+sigv4a_signing_region_set = *
+EOT
+                ,
+                null,
+                '*'
+            ],
+            [
+                null, null, null, '*', '*'
+            ],
+            [null, 'us-west-2', null, null, 'us-west-2'],
+            [
+                null,
+                null,
+                <<<EOT
+[default]
+sigv4a_signing_region_set = us-west-2
+EOT
+                ,
+                null,
+                'us-west-2'
+            ],
+            [null, null, null, 'us-west-2', 'us-west-2'],
+            [null, '*', null, 'us-west-2', 'us-west-2'],
+            [
+                null,
+                null,
+                <<<EOT
+[default]
+sigv4a_signing_region_set = *
+EOT
+                ,
+                'us-west-2',
+                'us-west-2'
+            ],
+            [['us-west-2', 'us-east-1'], null, null, null, 'us-west-2, us-east-1'],
+            [null, "us-west-2, us-east-1", null , null, 'us-west-2, us-east-1'],
+            [
+                null,
+                null,
+                <<<EOT
+[default]
+sigv4a_signing_region_set = us-west-2, us-east-1
+EOT
+                ,
+                null,
+                'us-west-2, us-east-1'
+            ],
+            [null, null, null, 'us-west-2, us-east-1', 'us-west-2, us-east-1']
+        ];
     }
 
     private function createHttpsEndpointClient(array $service = [], array $config = [])
@@ -606,96 +964,53 @@ class AwsClientTest extends TestCase
         ]);
     }
 
-    public function testThrowsDeprecationWarning() {
-        $storeEnvVariable = getenv('AWS_SUPPRESS_PHP_DEPRECATION_WARNING');
-        $storeEnvArrayVariable = isset($_ENV['AWS_SUPPRESS_PHP_DEPRECATION_WARNING']) ? $_ENV['AWS_SUPPRESS_PHP_DEPRECATION_WARNING'] : '';
-        $storeServerArrayVariable = isset($_SERVER['AWS_SUPPRESS_PHP_DEPRECATION_WARNING']) ? $_SERVER['AWS_SUPPRESS_PHP_DEPRECATION_WARNING'] : '';
-        putenv('AWS_SUPPRESS_PHP_DEPRECATION_WARNING');
-        unset($_ENV['AWS_SUPPRESS_PHP_DEPRECATION_WARNING']);
-        unset($_SERVER['AWS_SUPPRESS_PHP_DEPRECATION_WARNING']);
-        $expectsDeprecation = PHP_VERSION_ID < 70205;
-        if ($expectsDeprecation) {
-            try {
-                set_error_handler(function ($e, $message) {
-                    $this->assertStringContainsString("This installation of the SDK is using PHP version", $message);
-                    $this->assertEquals($e, E_USER_DEPRECATED);
-                    throw new Exception("This test successfully triggered the deprecation");
-                });
-                $client = new StsClient([
-                    'region'  => 'us-west-2',
-                    'version' => 'latest'
-                ]);
-                $this->fail("This test should have thrown the deprecation");
-            } catch (Exception $exception) {
-            } finally {
-                putenv("AWS_SUPPRESS_PHP_DEPRECATION_WARNING={$storeEnvVariable}");
-                restore_error_handler();
-            }
-        } else {
-            $client = new StsClient([
-                'region'  => 'us-west-2',
-                'version' => 'latest'
-            ]);
-            $this->assertTrue(true);
-        }
-        putenv("AWS_SUPPRESS_PHP_DEPRECATION_WARNING={$storeEnvVariable}");
-        if (!empty($storeEnvArrayVariable)) {
-            $_ENV['AWS_SUPPRESS_PHP_DEPRECATION_WARNING'] = $storeEnvArrayVariable;
-        }
-        if (!empty($storeServerArrayVariable)) {
-            $_SERVER['AWS_SUPPRESS_PHP_DEPRECATION_WARNING'] = $storeServerArrayVariable;
-        }
+    public function testClientDefaultsAccountIdEndpointModeBuiltInsToPreferred()
+    {
+        $client = new S3Client([
+            'region' => 'us-east-1'
+        ]);
+        $builtIns = $client->getClientBuiltIns();
+
+        self::assertEquals('preferred', $builtIns['AWS::Auth::AccountIdEndpointMode']);
     }
 
-    public function testCanDisableWarningWithClientConfig() {
-        $storeEnvVariable = getenv('AWS_SUPPRESS_PHP_DEPRECATION_WARNING');
-        putenv('AWS_SUPPRESS_PHP_DEPRECATION_WARNING');
-        $expectsDeprecation = PHP_VERSION_ID < 70205;
-        if ($expectsDeprecation) {
-            try {
-                set_error_handler(function ($e, $message) {
-                    $this->assertStringNotContainsString("This installation of the SDK is using PHP version", $message);
-                });
-                $client = new StsClient([
-                    'region'  => 'us-west-2',
-                    'version' => 'latest',
-                    'suppress_php_deprecation_warning' => true
-                ]);
-                restore_error_handler();
-            } catch (Exception $exception) {
-                restore_error_handler();
-                $this->fail("This test should not have thrown the deprecation");
-            }
-        } else {
-            putenv("AWS_SUPPRESS_PHP_DEPRECATION_WARNING={$storeEnvVariable}");
-            $this->markTestSkipped();
-        }
-        putenv("AWS_SUPPRESS_PHP_DEPRECATION_WARNING={$storeEnvVariable}");
+    public function testClientParameterOverridesDefaultAccountIdEndpointModeBuiltIns()
+    {
+        $expectedAccountIdEndpointMode = 'required';
+        $client = new S3Client([
+            'region' => 'us-east-1',
+            'account_id_endpoint_mode' => $expectedAccountIdEndpointMode
+        ]);
+        $builtIns = $client->getClientBuiltIns();
+
+        self::assertEquals($expectedAccountIdEndpointMode, $builtIns['AWS::Auth::AccountIdEndpointMode']);
     }
 
-    public function testCanDisableWarningWithEnvVar() {
-        $storeEnvVariable = getenv('AWS_SUPPRESS_PHP_DEPRECATION_WARNING');
-        putenv('AWS_SUPPRESS_PHP_DEPRECATION_WARNING=true');
-        $expectsDeprecation = PHP_VERSION_ID < 70205;
-        if ($expectsDeprecation) {
-            try {
-                set_error_handler(function ($e, $message) {
-                    echo "hi";
-                    $this->assertStringNotContainsString("This installation of the SDK is using PHP version", $message);
-                });
-                $client = new StsClient([
-                    'region'  => 'us-west-2',
-                    'version' => 'latest'
-                ]);
-                restore_error_handler();
-            } catch (Exception $exception) {
-                restore_error_handler();
-                $this->fail("This test should not have thrown the deprecation");
+    public function testQueryModeHeaderAdded(): void
+    {
+        $service = $this->generateTestService('json', ['awsQueryCompatible' => true]);
+        $client = $this->generateTestClient($service);
+        $list = $client->getHandlerList();
+        $list->setHandler(new MockHandler([new Result()]));
+        $list->appendSign(Middleware::tap(function ($cmd, $req) {
+            $this->assertTrue($req->hasHeader('x-amzn-query-mode'));
+            $this->assertEquals(true, $req->getHeaderLine('x-amzn-query-mode'));
+        }));
+        $client->TestOperation();
+    }
+
+    public function testAppendsUserAgentMiddleware()
+    {
+        $client = new S3Client([
+            'region' => 'us-east-2',
+            'http_handler' => function (RequestInterface $request) {
+                $userAgentValue = $request->getHeaderLine('User-Agent');
+
+                $this->assertNotEmpty($userAgentValue);
+
+                return new Response();
             }
-        } else {
-            putenv("AWS_SUPPRESS_PHP_DEPRECATION_WARNING={$storeEnvVariable}");
-            $this->markTestSkipped();
-        }
-        putenv("AWS_SUPPRESS_PHP_DEPRECATION_WARNING={$storeEnvVariable}");
+        ]);
+        $client->listBuckets();
     }
 }

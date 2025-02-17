@@ -5,11 +5,13 @@
     "endpointPrefix":"m2",
     "jsonVersion":"1.1",
     "protocol":"rest-json",
+    "protocols":["rest-json"],
     "serviceFullName":"AWSMainframeModernization",
     "serviceId":"m2",
     "signatureVersion":"v4",
     "signingName":"m2",
-    "uid":"m2-2021-04-28"
+    "uid":"m2-2021-04-28",
+    "auth":["aws.auth#sigv4"]
   },
   "operations":{
     "CancelBatchJobExecution":{
@@ -224,8 +226,11 @@
       "output":{"shape":"GetDataSetDetailsResponse"},
       "errors":[
         {"shape":"ResourceNotFoundException"},
+        {"shape":"ExecutionTimeoutException"},
+        {"shape":"ServiceUnavailableException"},
         {"shape":"ThrottlingException"},
         {"shape":"AccessDeniedException"},
+        {"shape":"ConflictException"},
         {"shape":"ValidationException"},
         {"shape":"InternalServerException"}
       ]
@@ -362,6 +367,24 @@
         {"shape":"InternalServerException"}
       ]
     },
+    "ListBatchJobRestartPoints":{
+      "name":"ListBatchJobRestartPoints",
+      "http":{
+        "method":"GET",
+        "requestUri":"/applications/{applicationId}/batch-job-executions/{executionId}/steps",
+        "responseCode":200
+      },
+      "input":{"shape":"ListBatchJobRestartPointsRequest"},
+      "output":{"shape":"ListBatchJobRestartPointsResponse"},
+      "errors":[
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"AccessDeniedException"},
+        {"shape":"ConflictException"},
+        {"shape":"ValidationException"},
+        {"shape":"InternalServerException"}
+      ]
+    },
     "ListDataSetImportHistory":{
       "name":"ListDataSetImportHistory",
       "http":{
@@ -390,8 +413,11 @@
       "output":{"shape":"ListDataSetsResponse"},
       "errors":[
         {"shape":"ResourceNotFoundException"},
+        {"shape":"ExecutionTimeoutException"},
+        {"shape":"ServiceUnavailableException"},
         {"shape":"ThrottlingException"},
         {"shape":"AccessDeniedException"},
+        {"shape":"ConflictException"},
         {"shape":"ValidationException"},
         {"shape":"InternalServerException"}
       ]
@@ -708,6 +734,11 @@
       "member":{"shape":"Arn"},
       "min":1
     },
+    "AuthSecretsManagerArn":{
+      "type":"string",
+      "max":2048,
+      "min":20
+    },
     "BatchJobDefinition":{
       "type":"structure",
       "members":{
@@ -731,6 +762,7 @@
         "Cancelled",
         "Succeeded",
         "Failed",
+        "Purged",
         "Succeeded With Warning"
       ]
     },
@@ -763,6 +795,8 @@
       "type":"structure",
       "members":{
         "fileBatchJobIdentifier":{"shape":"FileBatchJobIdentifier"},
+        "restartBatchJobIdentifier":{"shape":"RestartBatchJobIdentifier"},
+        "s3BatchJobIdentifier":{"shape":"S3BatchJobIdentifier"},
         "scriptBatchJobIdentifier":{"shape":"ScriptBatchJobIdentifier"}
       },
       "union":true
@@ -774,6 +808,10 @@
       "max":500,
       "min":0
     },
+    "BatchJobStepList":{
+      "type":"list",
+      "member":{"shape":"JobStep"}
+    },
     "BatchJobType":{
       "type":"string",
       "enum":[
@@ -784,13 +822,13 @@
     },
     "BatchParamKey":{
       "type":"string",
-      "max":8,
+      "max":32,
       "min":1,
-      "pattern":"^[A-Za-z][A-Za-z0-9]{1,7}$"
+      "pattern":"^[A-Za-z][A-Za-z0-9]{1,31}$"
     },
     "BatchParamValue":{
       "type":"string",
-      "max":44,
+      "max":1024,
       "min":0
     },
     "Boolean":{"type":"boolean"},
@@ -806,6 +844,7 @@
           "location":"uri",
           "locationName":"applicationId"
         },
+        "authSecretsManagerArn":{"shape":"AuthSecretsManagerArn"},
         "executionId":{
           "shape":"Identifier",
           "location":"uri",
@@ -821,6 +860,12 @@
     "CapacityValue":{
       "type":"integer",
       "box":true
+    },
+    "ClientToken":{
+      "type":"string",
+      "max":128,
+      "min":0,
+      "pattern":"^[!-~]+$"
     },
     "ConflictException":{
       "type":"structure",
@@ -845,7 +890,7 @@
       ],
       "members":{
         "clientToken":{
-          "shape":"String",
+          "shape":"ClientToken",
           "idempotencyToken":true
         },
         "definition":{"shape":"Definition"},
@@ -883,7 +928,7 @@
           "locationName":"applicationId"
         },
         "clientToken":{
-          "shape":"String",
+          "shape":"ClientToken",
           "idempotencyToken":true
         },
         "importConfig":{"shape":"DataSetImportConfig"}
@@ -911,7 +956,7 @@
         },
         "applicationVersion":{"shape":"Version"},
         "clientToken":{
-          "shape":"String",
+          "shape":"ClientToken",
           "idempotencyToken":true
         },
         "environmentId":{"shape":"Identifier"}
@@ -933,7 +978,7 @@
       ],
       "members":{
         "clientToken":{
-          "shape":"String",
+          "shape":"ClientToken",
           "idempotencyToken":true
         },
         "description":{"shape":"EntityDescription"},
@@ -943,6 +988,7 @@
         "instanceType":{"shape":"String20"},
         "kmsKeyId":{"shape":"String"},
         "name":{"shape":"EntityName"},
+        "networkType":{"shape":"NetworkType"},
         "preferredMaintenanceWindow":{"shape":"String50"},
         "publiclyAccessible":{"shape":"Boolean"},
         "securityGroupIds":{"shape":"String50List"},
@@ -1024,6 +1070,7 @@
       ],
       "members":{
         "status":{"shape":"DataSetTaskLifecycle"},
+        "statusReason":{"shape":"String"},
         "summary":{"shape":"DataSetImportSummary"},
         "taskId":{"shape":"Identifier"}
       }
@@ -1049,7 +1096,8 @@
       "enum":[
         "Creating",
         "Running",
-        "Completed"
+        "Completed",
+        "Failed"
       ]
     },
     "DataSetsSummaryList":{
@@ -1157,7 +1205,8 @@
       "enum":[
         "Deploying",
         "Succeeded",
-        "Failed"
+        "Failed",
+        "Updating Deployment"
       ]
     },
     "DeploymentList":{
@@ -1249,7 +1298,8 @@
         "Available",
         "Updating",
         "Deleting",
-        "Failed"
+        "Failed",
+        "UnHealthy"
       ]
     },
     "EnvironmentSummary":{
@@ -1272,12 +1322,24 @@
         "environmentId":{"shape":"Identifier"},
         "instanceType":{"shape":"String20"},
         "name":{"shape":"EntityName"},
+        "networkType":{"shape":"NetworkType"},
         "status":{"shape":"EnvironmentLifecycle"}
       }
     },
     "EnvironmentSummaryList":{
       "type":"list",
       "member":{"shape":"EnvironmentSummary"}
+    },
+    "ExecutionTimeoutException":{
+      "type":"structure",
+      "required":["message"],
+      "members":{
+        "message":{"shape":"String"}
+      },
+      "error":{"httpStatusCode":504},
+      "exception":true,
+      "fault":true,
+      "retryable":{"throttling":false}
     },
     "ExternalLocation":{
       "type":"structure",
@@ -1450,6 +1512,7 @@
         "executionId":{"shape":"Identifier"},
         "jobId":{"shape":"String100"},
         "jobName":{"shape":"String100"},
+        "jobStepRestartMarker":{"shape":"JobStepRestartMarker"},
         "jobType":{"shape":"BatchJobType"},
         "jobUser":{"shape":"String100"},
         "returnCode":{"shape":"String"},
@@ -1488,6 +1551,7 @@
         "creationTime":{"shape":"Timestamp"},
         "dataSetName":{"shape":"String200"},
         "dataSetOrg":{"shape":"DatasetDetailOrgAttributes"},
+        "fileSize":{"shape":"Long"},
         "lastReferencedTime":{"shape":"Timestamp"},
         "lastUpdatedTime":{"shape":"Timestamp"},
         "location":{"shape":"String2000"},
@@ -1606,6 +1670,7 @@
         "kmsKeyId":{"shape":"String"},
         "loadBalancerArn":{"shape":"String"},
         "name":{"shape":"EntityName"},
+        "networkType":{"shape":"NetworkType"},
         "pendingMaintenance":{"shape":"PendingMaintenance"},
         "preferredMaintenanceWindow":{"shape":"String50"},
         "publiclyAccessible":{"shape":"Boolean"},
@@ -1658,6 +1723,35 @@
       "exception":true,
       "fault":true,
       "retryable":{"throttling":false}
+    },
+    "JobIdentifier":{
+      "type":"structure",
+      "members":{
+        "fileName":{"shape":"String"},
+        "scriptName":{"shape":"String"}
+      },
+      "union":true
+    },
+    "JobStep":{
+      "type":"structure",
+      "members":{
+        "procStepName":{"shape":"String"},
+        "procStepNumber":{"shape":"Integer"},
+        "stepCondCode":{"shape":"String"},
+        "stepName":{"shape":"String"},
+        "stepNumber":{"shape":"Integer"},
+        "stepRestartable":{"shape":"Boolean"}
+      }
+    },
+    "JobStepRestartMarker":{
+      "type":"structure",
+      "required":["fromStep"],
+      "members":{
+        "fromProcStep":{"shape":"String"},
+        "fromStep":{"shape":"String"},
+        "toProcStep":{"shape":"String"},
+        "toStep":{"shape":"String"}
+      }
     },
     "ListApplicationVersionsRequest":{
       "type":"structure",
@@ -1809,6 +1903,36 @@
         "nextToken":{"shape":"NextToken"}
       }
     },
+    "ListBatchJobRestartPointsRequest":{
+      "type":"structure",
+      "required":[
+        "applicationId",
+        "executionId"
+      ],
+      "members":{
+        "applicationId":{
+          "shape":"Identifier",
+          "location":"uri",
+          "locationName":"applicationId"
+        },
+        "authSecretsManagerArn":{
+          "shape":"AuthSecretsManagerArn",
+          "location":"querystring",
+          "locationName":"authSecretsManagerArn"
+        },
+        "executionId":{
+          "shape":"Identifier",
+          "location":"uri",
+          "locationName":"executionId"
+        }
+      }
+    },
+    "ListBatchJobRestartPointsResponse":{
+      "type":"structure",
+      "members":{
+        "batchJobSteps":{"shape":"BatchJobStepList"}
+      }
+    },
     "ListDataSetImportHistoryRequest":{
       "type":"structure",
       "required":["applicationId"],
@@ -1851,6 +1975,11 @@
           "shape":"MaxResults",
           "location":"querystring",
           "locationName":"maxResults"
+        },
+        "nameFilter":{
+          "shape":"String200",
+          "location":"querystring",
+          "locationName":"nameFilter"
         },
         "nextToken":{
           "shape":"NextToken",
@@ -2000,6 +2129,10 @@
         "logType":{"shape":"String20"}
       }
     },
+    "Long":{
+      "type":"long",
+      "box":true
+    },
     "MaintenanceSchedule":{
       "type":"structure",
       "members":{
@@ -2012,6 +2145,13 @@
       "box":true,
       "max":2000,
       "min":1
+    },
+    "NetworkType":{
+      "type":"string",
+      "enum":[
+        "ipv4",
+        "dual"
+      ]
     },
     "NextToken":{
       "type":"string",
@@ -2108,6 +2248,29 @@
       },
       "exception":true
     },
+    "RestartBatchJobIdentifier":{
+      "type":"structure",
+      "required":[
+        "executionId",
+        "jobStepRestartMarker"
+      ],
+      "members":{
+        "executionId":{"shape":"Identifier"},
+        "jobStepRestartMarker":{"shape":"JobStepRestartMarker"}
+      }
+    },
+    "S3BatchJobIdentifier":{
+      "type":"structure",
+      "required":[
+        "bucket",
+        "identifier"
+      ],
+      "members":{
+        "bucket":{"shape":"String"},
+        "identifier":{"shape":"JobIdentifier"},
+        "keyPrefix":{"shape":"String"}
+      }
+    },
     "ScriptBatchJobDefinition":{
       "type":"structure",
       "required":["scriptName"],
@@ -2138,6 +2301,17 @@
       },
       "exception":true
     },
+    "ServiceUnavailableException":{
+      "type":"structure",
+      "required":["message"],
+      "members":{
+        "message":{"shape":"String"}
+      },
+      "error":{"httpStatusCode":503},
+      "exception":true,
+      "fault":true,
+      "retryable":{"throttling":false}
+    },
     "StartApplicationRequest":{
       "type":"structure",
       "required":["applicationId"],
@@ -2166,6 +2340,7 @@
           "location":"uri",
           "locationName":"applicationId"
         },
+        "authSecretsManagerArn":{"shape":"AuthSecretsManagerArn"},
         "batchJobIdentifier":{"shape":"BatchJobIdentifier"},
         "jobParams":{"shape":"BatchJobParametersMap"}
       }
@@ -2365,6 +2540,7 @@
           "location":"uri",
           "locationName":"environmentId"
         },
+        "forceUpdate":{"shape":"Boolean"},
         "instanceType":{"shape":"String20"},
         "preferredMaintenanceWindow":{"shape":"String"}
       }
@@ -2410,6 +2586,8 @@
       "enum":[
         "unknownOperation",
         "cannotParse",
+        "featureNotAvailable",
+        "unsupportedEngineVersion",
         "fieldValidationFailed",
         "other"
       ]

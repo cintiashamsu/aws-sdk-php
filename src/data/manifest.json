@@ -31,14 +31,6 @@
         },
         "serviceIdentifier": "acm"
     },
-    "alexaforbusiness": {
-        "namespace": "AlexaForBusiness",
-        "versions": {
-            "latest": "2017-11-09",
-            "2017-11-09": "2017-11-09"
-        },
-        "serviceIdentifier": "alexa_for_business"
-    },
     "amp": {
         "namespace": "PrometheusService",
         "versions": {
@@ -152,6 +144,14 @@
         },
         "serviceIdentifier": "application_insights"
     },
+    "application-signals": {
+        "namespace": "ApplicationSignals",
+        "versions": {
+            "latest": "2024-04-15",
+            "2024-04-15": "2024-04-15"
+        },
+        "serviceIdentifier": "application_signals"
+    },
     "applicationcostprofiler": {
         "namespace": "ApplicationCostProfiler",
         "versions": {
@@ -193,6 +193,14 @@
         },
         "serviceIdentifier": "appsync"
     },
+    "apptest": {
+        "namespace": "AppTest",
+        "versions": {
+            "latest": "2022-12-06",
+            "2022-12-06": "2022-12-06"
+        },
+        "serviceIdentifier": "apptest"
+    },
     "arc-zonal-shift": {
         "namespace": "ARCZonalShift",
         "versions": {
@@ -200,6 +208,14 @@
             "2022-10-30": "2022-10-30"
         },
         "serviceIdentifier": "arc_zonal_shift"
+    },
+    "artifact": {
+        "namespace": "Artifact",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "artifact"
     },
     "athena": {
         "namespace": "Athena",
@@ -233,6 +249,14 @@
         },
         "serviceIdentifier": "auto_scaling"
     },
+    "b2bi": {
+        "namespace": "B2bi",
+        "versions": {
+            "latest": "2022-06-23",
+            "2022-06-23": "2022-06-23"
+        },
+        "serviceIdentifier": "b2bi"
+    },
     "backup-gateway": {
         "namespace": "BackupGateway",
         "versions": {
@@ -249,13 +273,13 @@
         },
         "serviceIdentifier": "backup"
     },
-    "backupstorage": {
-        "namespace": "BackupStorage",
+    "backupsearch": {
+        "namespace": "BackupSearch",
         "versions": {
-            "latest": "2018-04-10",
-            "2018-04-10": "2018-04-10"
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
         },
-        "serviceIdentifier": "backupstorage"
+        "serviceIdentifier": "backupsearch"
     },
     "batch": {
         "namespace": "Batch",
@@ -264,6 +288,78 @@
             "2016-08-10": "2016-08-10"
         },
         "serviceIdentifier": "batch"
+    },
+    "bcm-data-exports": {
+        "namespace": "BCMDataExports",
+        "versions": {
+            "latest": "2023-11-26",
+            "2023-11-26": "2023-11-26"
+        },
+        "serviceIdentifier": "bcm_data_exports"
+    },
+    "bcm-pricing-calculator": {
+        "namespace": "BCMPricingCalculator",
+        "versions": {
+            "latest": "2024-06-19",
+            "2024-06-19": "2024-06-19"
+        },
+        "serviceIdentifier": "bcm_pricing_calculator"
+    },
+    "bedrock-agent-runtime": {
+        "namespace": "BedrockAgentRuntime",
+        "versions": {
+            "latest": "2023-07-26",
+            "2023-07-26": "2023-07-26"
+        },
+        "serviceIdentifier": "bedrock_agent_runtime"
+    },
+    "bedrock-agent": {
+        "namespace": "BedrockAgent",
+        "versions": {
+            "latest": "2023-06-05",
+            "2023-06-05": "2023-06-05"
+        },
+        "serviceIdentifier": "bedrock_agent"
+    },
+    "bedrock-data-automation-runtime": {
+        "namespace": "BedrockDataAutomationRuntime",
+        "versions": {
+            "latest": "2024-06-13",
+            "2024-06-13": "2024-06-13"
+        },
+        "serviceIdentifier": "bedrock_data_automation_runtime"
+    },
+    "bedrock-data-automation": {
+        "namespace": "BedrockDataAutomation",
+        "versions": {
+            "latest": "2023-07-26",
+            "2023-07-26": "2023-07-26"
+        },
+        "serviceIdentifier": "bedrock_data_automation"
+    },
+    "bedrock-runtime": {
+        "namespace": "BedrockRuntime",
+        "versions": {
+            "latest": "2023-09-30",
+            "2023-09-30": "2023-09-30"
+        },
+        "serviceIdentifier": "bedrock_runtime"
+    },
+    "bedrock": {
+        "namespace": "Bedrock",
+        "versions": {
+            "latest": "2023-04-20",
+            "2023-04-20": "2023-04-20"
+        },
+        "serviceIdentifier": "bedrock"
+    },
+    "billing": {
+        "namespace": "Billing",
+        "versions": {
+            "latest": "2023-09-07",
+            "2023-09-07": "2023-09-07"
+        },
+        "serviceIdentifier": "billing"
     },
     "billingconductor": {
         "namespace": "BillingConductor",
@@ -296,6 +392,14 @@
             "2017-10-25": "2017-10-25"
         },
         "serviceIdentifier": "cost_explorer"
+    },
+    "chatbot": {
+        "namespace": "Chatbot",
+        "versions": {
+            "latest": "2017-10-11",
+            "2017-10-11": "2017-10-11"
+        },
+        "serviceIdentifier": "chatbot"
     },
     "chime-sdk-identity": {
         "namespace": "ChimeSDKIdentity",
@@ -353,6 +457,14 @@
         },
         "serviceIdentifier": "cleanrooms"
     },
+    "cleanroomsml": {
+        "namespace": "CleanRoomsML",
+        "versions": {
+            "latest": "2023-09-06",
+            "2023-09-06": "2023-09-06"
+        },
+        "serviceIdentifier": "cleanroomsml"
+    },
     "cloud9": {
         "namespace": "Cloud9",
         "versions": {
@@ -385,6 +497,14 @@
             "2010-05-15": "2010-05-15"
         },
         "serviceIdentifier": "cloudformation"
+    },
+    "cloudfront-keyvaluestore": {
+        "namespace": "CloudFrontKeyValueStore",
+        "versions": {
+            "latest": "2022-07-26",
+            "2022-07-26": "2022-07-26"
+        },
+        "serviceIdentifier": "cloudfront_keyvaluestore"
     },
     "cloudfront": {
         "namespace": "CloudFront",
@@ -490,6 +610,14 @@
         },
         "serviceIdentifier": "codecommit"
     },
+    "codeconnections": {
+        "namespace": "CodeConnections",
+        "versions": {
+            "latest": "2023-12-01",
+            "2023-12-01": "2023-12-01"
+        },
+        "serviceIdentifier": "codeconnections"
+    },
     "codedeploy": {
         "namespace": "CodeDeploy",
         "versions": {
@@ -545,14 +673,6 @@
             "2019-10-15": "2019-10-15"
         },
         "serviceIdentifier": "codestar_notifications"
-    },
-    "codestar": {
-        "namespace": "CodeStar",
-        "versions": {
-            "latest": "2017-04-19",
-            "2017-04-19": "2017-04-19"
-        },
-        "serviceIdentifier": "codestar"
     },
     "cognito-identity": {
         "namespace": "CognitoIdentity",
@@ -634,6 +754,14 @@
         },
         "serviceIdentifier": "connectcampaigns"
     },
+    "connectcampaignsv2": {
+        "namespace": "ConnectCampaignsV2",
+        "versions": {
+            "latest": "2024-04-23",
+            "2024-04-23": "2024-04-23"
+        },
+        "serviceIdentifier": "connectcampaignsv2"
+    },
     "connectcases": {
         "namespace": "ConnectCases",
         "versions": {
@@ -650,6 +778,14 @@
         },
         "serviceIdentifier": "connectparticipant"
     },
+    "controlcatalog": {
+        "namespace": "ControlCatalog",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "controlcatalog"
+    },
     "controltower": {
         "namespace": "ControlTower",
         "versions": {
@@ -657,6 +793,14 @@
             "2018-05-10": "2018-05-10"
         },
         "serviceIdentifier": "controltower"
+    },
+    "cost-optimization-hub": {
+        "namespace": "CostOptimizationHub",
+        "versions": {
+            "latest": "2022-07-26",
+            "2022-07-26": "2022-07-26"
+        },
+        "serviceIdentifier": "cost_optimization_hub"
     },
     "cur": {
         "namespace": "CostandUsageReportService",
@@ -714,6 +858,14 @@
         },
         "serviceIdentifier": "datasync"
     },
+    "datazone": {
+        "namespace": "DataZone",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "datazone"
+    },
     "dax": {
         "namespace": "DAX",
         "versions": {
@@ -721,6 +873,14 @@
             "2017-04-19": "2017-04-19"
         },
         "serviceIdentifier": "dax"
+    },
+    "deadline": {
+        "namespace": "Deadline",
+        "versions": {
+            "latest": "2023-10-12",
+            "2023-10-12": "2023-10-12"
+        },
+        "serviceIdentifier": "deadline"
     },
     "detective": {
         "namespace": "Detective",
@@ -753,6 +913,14 @@
             "2012-10-25": "2012-10-25"
         },
         "serviceIdentifier": "direct_connect"
+    },
+    "directory-service-data": {
+        "namespace": "DirectoryServiceData",
+        "versions": {
+            "latest": "2023-05-31",
+            "2023-05-31": "2023-05-31"
+        },
+        "serviceIdentifier": "directory_service_data"
     },
     "discovery": {
         "namespace": "ApplicationDiscoveryService",
@@ -809,6 +977,14 @@
             "2015-04-16": "2015-04-16"
         },
         "serviceIdentifier": "directory_service"
+    },
+    "dsql": {
+        "namespace": "DSQL",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "dsql"
     },
     "dynamodb": {
         "namespace": "DynamoDb",
@@ -870,6 +1046,14 @@
             "2014-11-13": "2014-11-13"
         },
         "serviceIdentifier": "ecs"
+    },
+    "eks-auth": {
+        "namespace": "EKSAuth",
+        "versions": {
+            "latest": "2023-11-26",
+            "2023-11-26": "2023-11-26"
+        },
+        "serviceIdentifier": "eks_auth"
     },
     "eks": {
         "namespace": "EKS",
@@ -1080,6 +1264,14 @@
         },
         "serviceIdentifier": "frauddetector"
     },
+    "freetier": {
+        "namespace": "FreeTier",
+        "versions": {
+            "latest": "2023-09-07",
+            "2023-09-07": "2023-09-07"
+        },
+        "serviceIdentifier": "freetier"
+    },
     "fsx": {
         "namespace": "FSx",
         "versions": {
@@ -1096,13 +1288,29 @@
         },
         "serviceIdentifier": "gamelift"
     },
-    "gamesparks": {
-        "namespace": "GameSparks",
+    "geo-maps": {
+        "namespace": "GeoMaps",
         "versions": {
-            "latest": "2021-08-17",
-            "2021-08-17": "2021-08-17"
+            "latest": "2020-11-19",
+            "2020-11-19": "2020-11-19"
         },
-        "serviceIdentifier": "gamesparks"
+        "serviceIdentifier": "geo_maps"
+    },
+    "geo-places": {
+        "namespace": "GeoPlaces",
+        "versions": {
+            "latest": "2020-11-19",
+            "2020-11-19": "2020-11-19"
+        },
+        "serviceIdentifier": "geo_places"
+    },
+    "geo-routes": {
+        "namespace": "GeoRoutes",
+        "versions": {
+            "latest": "2020-11-19",
+            "2020-11-19": "2020-11-19"
+        },
+        "serviceIdentifier": "geo_routes"
     },
     "glacier": {
         "namespace": "Glacier",
@@ -1184,14 +1392,6 @@
         },
         "serviceIdentifier": "healthlake"
     },
-    "honeycode": {
-        "namespace": "Honeycode",
-        "versions": {
-            "latest": "2020-03-01",
-            "2020-03-01": "2020-03-01"
-        },
-        "serviceIdentifier": "honeycode"
-    },
     "iam": {
         "namespace": "Iam",
         "versions": {
@@ -1224,6 +1424,14 @@
         },
         "serviceIdentifier": "importexport"
     },
+    "inspector-scan": {
+        "namespace": "InspectorScan",
+        "versions": {
+            "latest": "2023-08-08",
+            "2023-08-08": "2023-08-08"
+        },
+        "serviceIdentifier": "inspector_scan"
+    },
     "inspector": {
         "namespace": "Inspector",
         "versions": {
@@ -1249,6 +1457,14 @@
         },
         "serviceIdentifier": "internetmonitor"
     },
+    "invoicing": {
+        "namespace": "Invoicing",
+        "versions": {
+            "latest": "2024-12-01",
+            "2024-12-01": "2024-12-01"
+        },
+        "serviceIdentifier": "invoicing"
+    },
     "iot-jobs-data": {
         "namespace": "IoTJobsDataPlane",
         "versions": {
@@ -1257,14 +1473,6 @@
         },
         "serviceIdentifier": "iot_jobs_data_plane"
     },
-    "iot-roborunner": {
-        "namespace": "IoTRoboRunner",
-        "versions": {
-            "latest": "2018-05-10",
-            "2018-05-10": "2018-05-10"
-        },
-        "serviceIdentifier": "iot_roborunner"
-    },
     "iot": {
         "namespace": "Iot",
         "versions": {
@@ -1272,22 +1480,6 @@
             "2015-05-28": "2015-05-28"
         },
         "serviceIdentifier": "iot"
-    },
-    "iot1click-devices": {
-        "namespace": "IoT1ClickDevicesService",
-        "versions": {
-            "latest": "2018-05-14",
-            "2018-05-14": "2018-05-14"
-        },
-        "serviceIdentifier": "iot_1click_devices_service"
-    },
-    "iot1click-projects": {
-        "namespace": "IoT1ClickProjects",
-        "versions": {
-            "latest": "2018-05-14",
-            "2018-05-14": "2018-05-14"
-        },
-        "serviceIdentifier": "iot_1click_projects"
     },
     "iotanalytics": {
         "namespace": "IoTAnalytics",
@@ -1529,6 +1721,14 @@
         },
         "serviceIdentifier": "lambda"
     },
+    "launch-wizard": {
+        "namespace": "LaunchWizard",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "launch_wizard"
+    },
     "lex-models": {
         "namespace": "LexModelBuildingService",
         "versions": {
@@ -1625,14 +1825,6 @@
         },
         "serviceIdentifier": "machine_learning"
     },
-    "macie": {
-        "namespace": "Macie",
-        "versions": {
-            "latest": "2017-12-19",
-            "2017-12-19": "2017-12-19"
-        },
-        "serviceIdentifier": "macie"
-    },
     "macie2": {
         "namespace": "Macie2",
         "versions": {
@@ -1640,6 +1832,14 @@
             "2020-01-01": "2020-01-01"
         },
         "serviceIdentifier": "macie2"
+    },
+    "mailmanager": {
+        "namespace": "MailManager",
+        "versions": {
+            "latest": "2023-10-17",
+            "2023-10-17": "2023-10-17"
+        },
+        "serviceIdentifier": "mailmanager"
     },
     "managedblockchain-query": {
         "namespace": "ManagedBlockchainQuery",
@@ -1657,6 +1857,14 @@
         },
         "serviceIdentifier": "managedblockchain"
     },
+    "marketplace-agreement": {
+        "namespace": "MarketplaceAgreement",
+        "versions": {
+            "latest": "2020-03-01",
+            "2020-03-01": "2020-03-01"
+        },
+        "serviceIdentifier": "marketplace_agreement"
+    },
     "marketplace-catalog": {
         "namespace": "MarketplaceCatalog",
         "versions": {
@@ -1664,6 +1872,22 @@
             "2018-09-17": "2018-09-17"
         },
         "serviceIdentifier": "marketplace_catalog"
+    },
+    "marketplace-deployment": {
+        "namespace": "MarketplaceDeployment",
+        "versions": {
+            "latest": "2023-01-25",
+            "2023-01-25": "2023-01-25"
+        },
+        "serviceIdentifier": "marketplace_deployment"
+    },
+    "marketplace-reporting": {
+        "namespace": "MarketplaceReporting",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "marketplace_reporting"
     },
     "marketplacecommerceanalytics": {
         "namespace": "MarketplaceCommerceAnalytics",
@@ -1817,14 +2041,6 @@
         },
         "serviceIdentifier": "migrationhubstrategy"
     },
-    "mobile": {
-        "namespace": "Mobile",
-        "versions": {
-            "latest": "2017-07-01",
-            "2017-07-01": "2017-07-01"
-        },
-        "serviceIdentifier": "mobile"
-    },
     "models.lex.v2": {
         "namespace": "LexModelsV2",
         "versions": {
@@ -1865,6 +2081,14 @@
         },
         "serviceIdentifier": "mwaa"
     },
+    "neptune-graph": {
+        "namespace": "NeptuneGraph",
+        "versions": {
+            "latest": "2023-11-29",
+            "2023-11-29": "2023-11-29"
+        },
+        "serviceIdentifier": "neptune_graph"
+    },
     "neptune": {
         "namespace": "Neptune",
         "versions": {
@@ -1872,6 +2096,14 @@
             "2014-10-31": "2014-10-31"
         },
         "serviceIdentifier": "neptune"
+    },
+    "neptunedata": {
+        "namespace": "Neptunedata",
+        "versions": {
+            "latest": "2023-08-01",
+            "2023-08-01": "2023-08-01"
+        },
+        "serviceIdentifier": "neptunedata"
     },
     "network-firewall": {
         "namespace": "NetworkFirewall",
@@ -1881,6 +2113,14 @@
         },
         "serviceIdentifier": "network_firewall"
     },
+    "networkflowmonitor": {
+        "namespace": "NetworkFlowMonitor",
+        "versions": {
+            "latest": "2023-04-19",
+            "2023-04-19": "2023-04-19"
+        },
+        "serviceIdentifier": "networkflowmonitor"
+    },
     "networkmanager": {
         "namespace": "NetworkManager",
         "versions": {
@@ -1889,13 +2129,29 @@
         },
         "serviceIdentifier": "networkmanager"
     },
-    "nimble": {
-        "namespace": "NimbleStudio",
+    "networkmonitor": {
+        "namespace": "NetworkMonitor",
         "versions": {
-            "latest": "2020-08-01",
-            "2020-08-01": "2020-08-01"
+            "latest": "2023-08-01",
+            "2023-08-01": "2023-08-01"
         },
-        "serviceIdentifier": "nimble"
+        "serviceIdentifier": "networkmonitor"
+    },
+    "notifications": {
+        "namespace": "Notifications",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "notifications"
+    },
+    "notificationscontacts": {
+        "namespace": "NotificationsContacts",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "notificationscontacts"
     },
     "oam": {
         "namespace": "OAM",
@@ -1904,6 +2160,14 @@
             "2022-06-10": "2022-06-10"
         },
         "serviceIdentifier": "oam"
+    },
+    "observabilityadmin": {
+        "namespace": "ObservabilityAdmin",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "observabilityadmin"
     },
     "omics": {
         "namespace": "Omics",
@@ -1977,6 +2241,14 @@
         },
         "serviceIdentifier": "panorama"
     },
+    "partnercentral-selling": {
+        "namespace": "PartnerCentralSelling",
+        "versions": {
+            "latest": "2022-07-26",
+            "2022-07-26": "2022-07-26"
+        },
+        "serviceIdentifier": "partnercentral_selling"
+    },
     "payment-cryptography-data": {
         "namespace": "PaymentCryptographyData",
         "versions": {
@@ -1992,6 +2264,30 @@
             "2021-09-14": "2021-09-14"
         },
         "serviceIdentifier": "payment_cryptography"
+    },
+    "pca-connector-ad": {
+        "namespace": "PcaConnectorAd",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "pca_connector_ad"
+    },
+    "pca-connector-scep": {
+        "namespace": "PcaConnectorScep",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "pca_connector_scep"
+    },
+    "pcs": {
+        "namespace": "PCS",
+        "versions": {
+            "latest": "2023-02-10",
+            "2023-02-10": "2023-02-10"
+        },
+        "serviceIdentifier": "pcs"
     },
     "personalize-events": {
         "namespace": "PersonalizeEvents",
@@ -2089,6 +2385,30 @@
         },
         "serviceIdentifier": "proton"
     },
+    "qapps": {
+        "namespace": "QApps",
+        "versions": {
+            "latest": "2023-11-27",
+            "2023-11-27": "2023-11-27"
+        },
+        "serviceIdentifier": "qapps"
+    },
+    "qbusiness": {
+        "namespace": "QBusiness",
+        "versions": {
+            "latest": "2023-11-27",
+            "2023-11-27": "2023-11-27"
+        },
+        "serviceIdentifier": "qbusiness"
+    },
+    "qconnect": {
+        "namespace": "QConnect",
+        "versions": {
+            "latest": "2020-10-19",
+            "2020-10-19": "2020-10-19"
+        },
+        "serviceIdentifier": "qconnect"
+    },
     "qldb-session": {
         "namespace": "QLDBSession",
         "versions": {
@@ -2178,6 +2498,14 @@
         },
         "serviceIdentifier": "rekognition"
     },
+    "repostspace": {
+        "namespace": "Repostspace",
+        "versions": {
+            "latest": "2022-05-13",
+            "2022-05-13": "2022-05-13"
+        },
+        "serviceIdentifier": "repostspace"
+    },
     "resiliencehub": {
         "namespace": "ResilienceHub",
         "versions": {
@@ -2266,6 +2594,14 @@
         },
         "serviceIdentifier": "route_53_domains"
     },
+    "route53profiles": {
+        "namespace": "Route53Profiles",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "route53profiles"
+    },
     "route53resolver": {
         "namespace": "Route53Resolver",
         "versions": {
@@ -2329,6 +2665,14 @@
             "2017-07-25": "2017-07-25"
         },
         "serviceIdentifier": "s3outposts"
+    },
+    "s3tables": {
+        "namespace": "S3Tables",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "s3tables"
     },
     "sagemaker-a2i-runtime": {
         "namespace": "AugmentedAIRuntime",
@@ -2409,6 +2753,14 @@
             "2017-10-17": "2017-10-17"
         },
         "serviceIdentifier": "secrets_manager"
+    },
+    "security-ir": {
+        "namespace": "SecurityIR",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "security_ir"
     },
     "securityhub": {
         "namespace": "SecurityHub",
@@ -2538,6 +2890,14 @@
         },
         "serviceIdentifier": "sns"
     },
+    "socialmessaging": {
+        "namespace": "SocialMessaging",
+        "versions": {
+            "latest": "2024-01-01",
+            "2024-01-01": "2024-01-01"
+        },
+        "serviceIdentifier": "socialmessaging"
+    },
     "sqs": {
         "namespace": "Sqs",
         "versions": {
@@ -2561,6 +2921,14 @@
             "2018-05-10": "2018-05-10"
         },
         "serviceIdentifier": "ssm_incidents"
+    },
+    "ssm-quicksetup": {
+        "namespace": "SSMQuickSetup",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "ssm_quicksetup"
     },
     "ssm-sap": {
         "namespace": "SsmSap",
@@ -2634,6 +3002,14 @@
         },
         "serviceIdentifier": "sts"
     },
+    "supplychain": {
+        "namespace": "SupplyChain",
+        "versions": {
+            "latest": "2024-01-01",
+            "2024-01-01": "2024-01-01"
+        },
+        "serviceIdentifier": "supplychain"
+    },
     "support-app": {
         "namespace": "SupportApp",
         "versions": {
@@ -2666,6 +3042,14 @@
         },
         "serviceIdentifier": "synthetics"
     },
+    "taxsettings": {
+        "namespace": "TaxSettings",
+        "versions": {
+            "latest": "2018-05-10",
+            "2018-05-10": "2018-05-10"
+        },
+        "serviceIdentifier": "taxsettings"
+    },
     "textract": {
         "namespace": "Textract",
         "versions": {
@@ -2673,6 +3057,14 @@
             "2018-06-27": "2018-06-27"
         },
         "serviceIdentifier": "textract"
+    },
+    "timestream-influxdb": {
+        "namespace": "TimestreamInfluxDB",
+        "versions": {
+            "latest": "2023-01-27",
+            "2023-01-27": "2023-01-27"
+        },
+        "serviceIdentifier": "timestream_influxdb"
     },
     "timestream-query": {
         "namespace": "TimestreamQuery",
@@ -2721,6 +3113,14 @@
             "2017-07-01": "2017-07-01"
         },
         "serviceIdentifier": "translate"
+    },
+    "trustedadvisor": {
+        "namespace": "TrustedAdvisor",
+        "versions": {
+            "latest": "2022-09-15",
+            "2022-09-15": "2022-09-15"
+        },
+        "serviceIdentifier": "trustedadvisor"
     },
     "verifiedpermissions": {
         "namespace": "VerifiedPermissions",
@@ -2794,14 +3194,6 @@
         },
         "serviceIdentifier": "workdocs"
     },
-    "worklink": {
-        "namespace": "WorkLink",
-        "versions": {
-            "latest": "2018-09-25",
-            "2018-09-25": "2018-09-25"
-        },
-        "serviceIdentifier": "worklink"
-    },
     "workmail": {
         "namespace": "WorkMail",
         "versions": {
@@ -2817,6 +3209,14 @@
             "2019-05-01": "2019-05-01"
         },
         "serviceIdentifier": "workmailmessageflow"
+    },
+    "workspaces-thin-client": {
+        "namespace": "WorkSpacesThinClient",
+        "versions": {
+            "latest": "2023-08-22",
+            "2023-08-22": "2023-08-22"
+        },
+        "serviceIdentifier": "workspaces_thin_client"
     },
     "workspaces-web": {
         "namespace": "WorkSpacesWeb",

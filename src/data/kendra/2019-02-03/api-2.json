@@ -5,13 +5,15 @@
     "endpointPrefix":"kendra",
     "jsonVersion":"1.1",
     "protocol":"json",
+    "protocols":["json"],
     "serviceAbbreviation":"kendra",
     "serviceFullName":"AWSKendraFrontendService",
     "serviceId":"kendra",
     "signatureVersion":"v4",
     "signingName":"kendra",
     "targetPrefix":"AWSKendraFrontendService",
-    "uid":"kendra-2019-02-03"
+    "uid":"kendra-2019-02-03",
+    "auth":["aws.auth#sigv4"]
   },
   "operations":{
     "AssociateEntitiesToExperience":{
@@ -1362,6 +1364,7 @@
       "type":"structure",
       "members":{
         "Id":{"shape":"DocumentId"},
+        "DataSourceId":{"shape":"DataSourceId"},
         "ErrorCode":{"shape":"ErrorCode"},
         "ErrorMessage":{"shape":"ErrorMessage"}
       }
@@ -1427,6 +1430,7 @@
       "type":"structure",
       "members":{
         "DocumentId":{"shape":"DocumentId"},
+        "DataSourceId":{"shape":"DataSourceId"},
         "ErrorCode":{"shape":"ErrorCode"},
         "ErrorMessage":{"shape":"ErrorMessage"}
       }
@@ -1458,6 +1462,7 @@
       "type":"structure",
       "members":{
         "Id":{"shape":"DocumentId"},
+        "DataSourceId":{"shape":"DataSourceId"},
         "ErrorCode":{"shape":"ErrorCode"},
         "ErrorMessage":{"shape":"ErrorMessage"}
       }
@@ -1539,6 +1544,25 @@
       "type":"string",
       "max":100,
       "min":1
+    },
+    "CollapseConfiguration":{
+      "type":"structure",
+      "required":["DocumentAttributeKey"],
+      "members":{
+        "DocumentAttributeKey":{"shape":"DocumentAttributeKey"},
+        "SortingConfigurations":{"shape":"SortingConfigurationList"},
+        "MissingAttributeKeyStrategy":{"shape":"MissingAttributeKeyStrategy"},
+        "Expand":{"shape":"Boolean"},
+        "ExpandConfiguration":{"shape":"ExpandConfiguration"}
+      }
+    },
+    "CollapsedResultDetail":{
+      "type":"structure",
+      "required":["DocumentAttribute"],
+      "members":{
+        "DocumentAttribute":{"shape":"DocumentAttribute"},
+        "ExpandedResults":{"shape":"ExpandedResultList"}
+      }
     },
     "ColumnConfiguration":{
       "type":"structure",
@@ -3053,6 +3077,28 @@
       "max":100,
       "min":0
     },
+    "ExpandConfiguration":{
+      "type":"structure",
+      "members":{
+        "MaxResultItemsToExpand":{"shape":"Integer"},
+        "MaxExpandedResultsPerItem":{"shape":"Integer"}
+      }
+    },
+    "ExpandedResultItem":{
+      "type":"structure",
+      "members":{
+        "Id":{"shape":"ResultId"},
+        "DocumentId":{"shape":"DocumentId"},
+        "DocumentTitle":{"shape":"TextWithHighlights"},
+        "DocumentExcerpt":{"shape":"TextWithHighlights"},
+        "DocumentURI":{"shape":"Url"},
+        "DocumentAttributes":{"shape":"DocumentAttributeList"}
+      }
+    },
+    "ExpandedResultList":{
+      "type":"list",
+      "member":{"shape":"ExpandedResultItem"}
+    },
     "ExperienceConfiguration":{
       "type":"structure",
       "members":{
@@ -3616,7 +3662,8 @@
       "type":"string",
       "enum":[
         "DEVELOPER_EDITION",
-        "ENTERPRISE_EDITION"
+        "ENTERPRISE_EDITION",
+        "GEN_AI_ENTERPRISE_EDITION"
       ]
     },
     "IndexFieldName":{
@@ -4179,6 +4226,14 @@
       "max":10000,
       "min":1
     },
+    "MissingAttributeKeyStrategy":{
+      "type":"string",
+      "enum":[
+        "IGNORE",
+        "COLLAPSE",
+        "EXPAND"
+      ]
+    },
     "Mode":{
       "type":"string",
       "enum":[
@@ -4409,9 +4464,11 @@
         "PageNumber":{"shape":"Integer"},
         "PageSize":{"shape":"Integer"},
         "SortingConfiguration":{"shape":"SortingConfiguration"},
+        "SortingConfigurations":{"shape":"SortingConfigurationList"},
         "UserContext":{"shape":"UserContext"},
         "VisitorId":{"shape":"VisitorId"},
-        "SpellCorrectionConfiguration":{"shape":"SpellCorrectionConfiguration"}
+        "SpellCorrectionConfiguration":{"shape":"SpellCorrectionConfiguration"},
+        "CollapseConfiguration":{"shape":"CollapseConfiguration"}
       }
     },
     "QueryResult":{
@@ -4447,7 +4504,8 @@
         "DocumentAttributes":{"shape":"DocumentAttributeList"},
         "ScoreAttributes":{"shape":"ScoreAttributes"},
         "FeedbackToken":{"shape":"FeedbackToken"},
-        "TableExcerpt":{"shape":"TableExcerpt"}
+        "TableExcerpt":{"shape":"TableExcerpt"},
+        "CollapsedResultDetail":{"shape":"CollapsedResultDetail"}
       }
     },
     "QueryResultItemList":{
@@ -4654,7 +4712,8 @@
         "DocumentTitle":{"shape":"DocumentTitle"},
         "Content":{"shape":"Content"},
         "DocumentURI":{"shape":"Url"},
-        "DocumentAttributes":{"shape":"DocumentAttributeList"}
+        "DocumentAttributes":{"shape":"DocumentAttributeList"},
+        "ScoreAttributes":{"shape":"ScoreAttributes"}
       }
     },
     "RetrieveResultItemList":{
@@ -5154,6 +5213,11 @@
         "DocumentAttributeKey":{"shape":"DocumentAttributeKey"},
         "SortOrder":{"shape":"SortOrder"}
       }
+    },
+    "SortingConfigurationList":{
+      "type":"list",
+      "member":{"shape":"SortingConfiguration"},
+      "min":1
     },
     "SourceDocument":{
       "type":"structure",

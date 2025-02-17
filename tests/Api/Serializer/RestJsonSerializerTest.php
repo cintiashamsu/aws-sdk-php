@@ -6,6 +6,7 @@ use Aws\Command;
 use Aws\Api\Serializer\RestJsonSerializer;
 use Aws\EndpointV2\EndpointDefinitionProvider;
 use Aws\EndpointV2\EndpointProviderV2;
+use Aws\EndpointV2\Ruleset\RulesetEndpoint;
 use Aws\Test\UsesServiceTrait;
 use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
@@ -58,6 +59,13 @@ class RestJsonSerializerTest extends TestCase
                     'boolHeader' => [
                         'http' => ['method' => 'POST'],
                         'input' => ['shape' => 'BoolHeaderInput']
+                    ],
+                    'requestUriOperation' =>[
+                        'http' => [
+                            'method' => 'POST',
+                            'requestUri' => 'foo/{PathSegment}'
+                        ],
+                        'input' => ['shape' => 'RequestUriOperationInput'],
                     ]
                 ],
                 'shapes' => [
@@ -73,6 +81,17 @@ class RestJsonSerializerTest extends TestCase
                             "DocumentValue" => [
                                 "shape" => "DocumentType",
                             ]
+                        ]
+                    ],
+                    'RequestUriOperationInput' => [
+                        'required' => ['PathSegment'],
+                        'type' => 'structure',
+                        'members' => [
+                            "PathSegment" => [
+                                "shape" => "PathSegmentShape",
+                                "location" => 'uri'
+                            ],
+                            'baz' => ['shape' => 'BazShape']
                         ]
                     ],
                     "DocumentType" => [
@@ -138,6 +157,7 @@ class RestJsonSerializerTest extends TestCase
                     'BlobShape' => ['type' => 'blob'],
                     'BazShape'  => ['type' => 'string'],
                     'BoolShape' => ['type' => 'boolean'],
+                    'PathSegmentShape'  => ['type' => 'string'],
                 ]
             ],
             function () {}
@@ -152,11 +172,12 @@ class RestJsonSerializerTest extends TestCase
         return $j($command);
     }
 
-    private function getPathEndpointRequest($commandName, $input)
+    private function getPathEndpointRequest($commandName, $input, $options = [])
     {
         $service = $this->getTestService();
         $command = new Command($commandName, $input);
-        $j = new RestJsonSerializer($service, 'http://foo.com/bar');
+        $path = $options['path'] ?? 'bar';
+        $j = new RestJsonSerializer($service, 'http://foo.com/' . $path);
         return $j($command);
     }
 
@@ -177,6 +198,21 @@ class RestJsonSerializerTest extends TestCase
         $request = $this->getPathEndpointRequest('foo', ['baz' => 'bar']);
         $this->assertSame('POST', $request->getMethod());
         $this->assertSame('http://foo.com/bar', (string) $request->getUri());
+        $this->assertSame('{"baz":"bar"}', (string) $request->getBody());
+        $this->assertSame(
+            'application/json',
+            $request->getHeaderLine('Content-Type')
+        );
+    }
+
+    public function testPreparesRequestsWithEndpointWithRequestUriAndPath(): void
+    {
+        $request = $this->getPathEndpointRequest(
+            'requestUriOperation',
+            ['PathSegment' => 'bar', 'baz' => 'bar']
+        );
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertSame('http://foo.com/bar/foo/bar', (string) $request->getUri());
         $this->assertSame('{"baz":"bar"}', (string) $request->getBody());
         $this->assertSame(
             'application/json',
@@ -347,15 +383,9 @@ class RestJsonSerializerTest extends TestCase
     {
         $serializer = new RestJsonSerializer($this->getTestService(), 'http://foo.com');
         $cmd = new Command('foo', ['baz' => 'bar']);
-        $endpointProvider = new EndpointProviderV2(
-            json_decode(
-                file_get_contents(__DIR__ . '/../../EndpointV2/valid-rules/aws-region.json'),
-                true
-            ),
-            EndpointDefinitionProvider::getPartitions()
-        );
-        $request = $serializer($cmd, $endpointProvider, ['Region' => 'us-east-1']);
-        $this->assertSame('http://us-east-1.amazonaws.com/', (string) $request->getUri());
+        $endpoint = new RulesetEndpoint('https://foo.com');
+        $request = $serializer($cmd, $endpoint);
+        $this->assertSame('http://foo.com/', (string) $request->getUri());
     }
 }
 

@@ -3,7 +3,8 @@ namespace Aws\Test;
 
 use Aws\Command;
 use Aws\HandlerList;
-use PHPUnit\Framework\TestCase;
+use Aws\MetricsBuilder;
+use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
 /**
  * @covers Aws\Command
@@ -45,20 +46,28 @@ class CommandTest extends TestCase
 
     public function testIsIterable()
     {
-        $c = new Command('foo', ['bar' => 'baz', 'qux' => 'boo']);
-        $data = iterator_to_array($c);
-        $this->assertEquals(
-            ['bar' => 'baz', 'qux' => 'boo', '@http' => [], '@context' => []],
+        $command = new Command('foo', ['bar' => 'baz', 'qux' => 'boo']);
+        $data = iterator_to_array($command);
+        $this->assertEquals([
+                'bar' => 'baz',
+                'qux' => 'boo',
+                '@http' => [],
+                '@context' => []
+            ],
             $data
         );
     }
 
     public function testConvertToArray()
     {
-        $c = new Command('foo', ['bar' => 'baz', 'qux' => 'boo']);
-        $this->assertEquals(
-            ['bar' => 'baz', 'qux' => 'boo', '@http' => [], '@context' => []],
-            $c->toArray()
+        $command = new Command('foo', ['bar' => 'baz', 'qux' => 'boo']);
+        $this->assertEquals([
+            'bar' => 'baz',
+            'qux' => 'boo',
+            '@http' => [],
+            '@context' => []
+        ],
+            $command->toArray()
         );
     }
 
@@ -84,5 +93,36 @@ class CommandTest extends TestCase
         unset($c['boo']);
         $this->assertArrayNotHasKey('boo', $c);
         $this->assertNull($c['boo']);
+    }
+
+    public function testGetAuthSchemesEmitsWarning()
+    {
+        $this->expectWarning();
+        $this->expectWarningMessage(
+            'Aws\Command::getAuthSchemes is deprecated.  Auth schemes resolved using the service'
+        .' `auth` trait or via endpoint resolution can now be found in the command `@context` property.'
+        );
+
+        $c = new Command('foo', ['bar' => 'baz', 'qux' => 'boo']);
+        $c->getAuthSchemes();
+    }
+
+    public function testSetAuthSchemesEmitsWarning()
+    {
+        $this->expectWarning();
+        $this->expectWarningMessage(
+            'Aws\Command::setAuthSchemes is deprecated.  Auth schemes resolved using the service'
+            .' `auth` trait or via endpoint resolution are now set in the command `@context` property.'
+        );
+
+        $c = new Command('foo', ['bar' => 'baz', 'qux' => 'boo']);
+        $c->setAuthSchemes([]);
+    }
+
+    public function testInitializeMetricsBuilderObject()
+    {
+        $command = new Command('Foo', []);
+        $metricsBuilder = MetricsBuilder::fromCommand($command);
+        $this->assertInstanceOf(MetricsBuilder::class, $metricsBuilder);
     }
 }

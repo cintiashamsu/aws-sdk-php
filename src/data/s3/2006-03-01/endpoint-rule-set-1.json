@@ -58,6 +58,21 @@
             "documentation": "Internal parameter to use object lambda endpoint for an operation (eg: WriteGetObjectResponse)",
             "type": "Boolean"
         },
+        "Key": {
+            "required": false,
+            "documentation": "The S3 Key used to send the request. This is an optional parameter that will be set automatically for operations that are scoped to an S3 Key.",
+            "type": "String"
+        },
+        "Prefix": {
+            "required": false,
+            "documentation": "The S3 Prefix used to send the request. This is an optional parameter that will be set automatically for operations that are scoped to an S3 Prefix.",
+            "type": "String"
+        },
+        "CopySource": {
+            "required": false,
+            "documentation": "The Copy Source used for Copy Object request. This is an optional parameter that will be set automatically for operations that are scoped to Copy Source.",
+            "type": "String"
+        },
         "DisableAccessPoints": {
             "required": false,
             "documentation": "Internal parameter to disable Access Point Buckets",
@@ -75,6 +90,16 @@
             "required": false,
             "documentation": "When an Access Point ARN is provided and this flag is enabled, the SDK MUST use the ARN's region when constructing the endpoint instead of the client's configured region.",
             "type": "Boolean"
+        },
+        "UseS3ExpressControlEndpoint": {
+            "required": false,
+            "documentation": "Internal parameter to indicate whether S3Express operation should use control plane, (ex. CreateBucket)",
+            "type": "Boolean"
+        },
+        "DisableS3ExpressSessionAuth": {
+            "required": false,
+            "documentation": "Parameter to indicate whether S3Express session auth should be disabled",
+            "type": "Boolean"
         }
     },
     "rules": [
@@ -89,7 +114,6 @@
                     ]
                 }
             ],
-            "type": "tree",
             "rules": [
                 {
                     "conditions": [
@@ -239,6 +263,1472 @@
                                 {
                                     "ref": "Bucket"
                                 },
+                                0,
+                                6,
+                                true
+                            ],
+                            "assign": "bucketSuffix"
+                        },
+                        {
+                            "fn": "stringEquals",
+                            "argv": [
+                                {
+                                    "ref": "bucketSuffix"
+                                },
+                                "--x-s3"
+                            ]
+                        }
+                    ],
+                    "rules": [
+                        {
+                            "conditions": [
+                                {
+                                    "fn": "booleanEquals",
+                                    "argv": [
+                                        {
+                                            "ref": "UseDualStack"
+                                        },
+                                        true
+                                    ]
+                                }
+                            ],
+                            "error": "S3Express does not support Dual-stack.",
+                            "type": "error"
+                        },
+                        {
+                            "conditions": [
+                                {
+                                    "fn": "booleanEquals",
+                                    "argv": [
+                                        {
+                                            "ref": "Accelerate"
+                                        },
+                                        true
+                                    ]
+                                }
+                            ],
+                            "error": "S3Express does not support S3 Accelerate.",
+                            "type": "error"
+                        },
+                        {
+                            "conditions": [
+                                {
+                                    "fn": "isSet",
+                                    "argv": [
+                                        {
+                                            "ref": "Endpoint"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "fn": "parseURL",
+                                    "argv": [
+                                        {
+                                            "ref": "Endpoint"
+                                        }
+                                    ],
+                                    "assign": "url"
+                                }
+                            ],
+                            "rules": [
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "isSet",
+                                            "argv": [
+                                                {
+                                                    "ref": "DisableS3ExpressSessionAuth"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "fn": "booleanEquals",
+                                            "argv": [
+                                                {
+                                                    "ref": "DisableS3ExpressSessionAuth"
+                                                },
+                                                true
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "booleanEquals",
+                                                    "argv": [
+                                                        {
+                                                            "fn": "getAttr",
+                                                            "argv": [
+                                                                {
+                                                                    "ref": "url"
+                                                                },
+                                                                "isIp"
+                                                            ]
+                                                        },
+                                                        true
+                                                    ]
+                                                }
+                                            ],
+                                            "rules": [
+                                                {
+                                                    "conditions": [
+                                                        {
+                                                            "fn": "uriEncode",
+                                                            "argv": [
+                                                                {
+                                                                    "ref": "Bucket"
+                                                                }
+                                                            ],
+                                                            "assign": "uri_encoded_bucket"
+                                                        }
+                                                    ],
+                                                    "rules": [
+                                                        {
+                                                            "conditions": [],
+                                                            "endpoint": {
+                                                                "url": "{url#scheme}://{url#authority}/{uri_encoded_bucket}{url#path}",
+                                                                "properties": {
+                                                                    "backend": "S3Express",
+                                                                    "authSchemes": [
+                                                                        {
+                                                                            "disableDoubleEncoding": true,
+                                                                            "name": "sigv4",
+                                                                            "signingName": "s3express",
+                                                                            "signingRegion": "{Region}"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "headers": {}
+                                                            },
+                                                            "type": "endpoint"
+                                                        }
+                                                    ],
+                                                    "type": "tree"
+                                                }
+                                            ],
+                                            "type": "tree"
+                                        },
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "aws.isVirtualHostableS3Bucket",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        false
+                                                    ]
+                                                }
+                                            ],
+                                            "rules": [
+                                                {
+                                                    "conditions": [],
+                                                    "endpoint": {
+                                                        "url": "{url#scheme}://{Bucket}.{url#authority}{url#path}",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                }
+                                            ],
+                                            "type": "tree"
+                                        },
+                                        {
+                                            "conditions": [],
+                                            "error": "S3Express bucket name is not a valid virtual hostable name.",
+                                            "type": "error"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "booleanEquals",
+                                            "argv": [
+                                                {
+                                                    "fn": "getAttr",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "url"
+                                                        },
+                                                        "isIp"
+                                                    ]
+                                                },
+                                                true
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "uriEncode",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        }
+                                                    ],
+                                                    "assign": "uri_encoded_bucket"
+                                                }
+                                            ],
+                                            "rules": [
+                                                {
+                                                    "conditions": [],
+                                                    "endpoint": {
+                                                        "url": "{url#scheme}://{url#authority}/{uri_encoded_bucket}{url#path}",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4-s3express",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                }
+                                            ],
+                                            "type": "tree"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "aws.isVirtualHostableS3Bucket",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                false
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [],
+                                            "endpoint": {
+                                                "url": "{url#scheme}://{Bucket}.{url#authority}{url#path}",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [],
+                                    "error": "S3Express bucket name is not a valid virtual hostable name.",
+                                    "type": "error"
+                                }
+                            ],
+                            "type": "tree"
+                        },
+                        {
+                            "conditions": [
+                                {
+                                    "fn": "isSet",
+                                    "argv": [
+                                        {
+                                            "ref": "UseS3ExpressControlEndpoint"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "fn": "booleanEquals",
+                                    "argv": [
+                                        {
+                                            "ref": "UseS3ExpressControlEndpoint"
+                                        },
+                                        true
+                                    ]
+                                }
+                            ],
+                            "rules": [
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "uriEncode",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                }
+                                            ],
+                                            "assign": "uri_encoded_bucket"
+                                        },
+                                        {
+                                            "fn": "not",
+                                            "argv": [
+                                                {
+                                                    "fn": "isSet",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Endpoint"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "booleanEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "UseFIPS"
+                                                        },
+                                                        true
+                                                    ]
+                                                }
+                                            ],
+                                            "endpoint": {
+                                                "url": "https://s3express-control-fips.{Region}.amazonaws.com/{uri_encoded_bucket}",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        },
+                                        {
+                                            "conditions": [],
+                                            "endpoint": {
+                                                "url": "https://s3express-control.{Region}.amazonaws.com/{uri_encoded_bucket}",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                }
+                            ],
+                            "type": "tree"
+                        },
+                        {
+                            "conditions": [
+                                {
+                                    "fn": "aws.isVirtualHostableS3Bucket",
+                                    "argv": [
+                                        {
+                                            "ref": "Bucket"
+                                        },
+                                        false
+                                    ]
+                                }
+                            ],
+                            "rules": [
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "isSet",
+                                            "argv": [
+                                                {
+                                                    "ref": "DisableS3ExpressSessionAuth"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "fn": "booleanEquals",
+                                            "argv": [
+                                                {
+                                                    "ref": "DisableS3ExpressSessionAuth"
+                                                },
+                                                true
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        6,
+                                                        14,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneId"
+                                                },
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        14,
+                                                        16,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                {
+                                                    "fn": "stringEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "s3expressAvailabilityZoneDelim"
+                                                        },
+                                                        "--"
+                                                    ]
+                                                }
+                                            ],
+                                            "rules": [
+                                                {
+                                                    "conditions": [
+                                                        {
+                                                            "fn": "booleanEquals",
+                                                            "argv": [
+                                                                {
+                                                                    "ref": "UseFIPS"
+                                                                },
+                                                                true
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                },
+                                                {
+                                                    "conditions": [],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                }
+                                            ],
+                                            "type": "tree"
+                                        },
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        6,
+                                                        15,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneId"
+                                                },
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        15,
+                                                        17,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                {
+                                                    "fn": "stringEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "s3expressAvailabilityZoneDelim"
+                                                        },
+                                                        "--"
+                                                    ]
+                                                }
+                                            ],
+                                            "rules": [
+                                                {
+                                                    "conditions": [
+                                                        {
+                                                            "fn": "booleanEquals",
+                                                            "argv": [
+                                                                {
+                                                                    "ref": "UseFIPS"
+                                                                },
+                                                                true
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                },
+                                                {
+                                                    "conditions": [],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                }
+                                            ],
+                                            "type": "tree"
+                                        },
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        6,
+                                                        19,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneId"
+                                                },
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        19,
+                                                        21,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                {
+                                                    "fn": "stringEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "s3expressAvailabilityZoneDelim"
+                                                        },
+                                                        "--"
+                                                    ]
+                                                }
+                                            ],
+                                            "rules": [
+                                                {
+                                                    "conditions": [
+                                                        {
+                                                            "fn": "booleanEquals",
+                                                            "argv": [
+                                                                {
+                                                                    "ref": "UseFIPS"
+                                                                },
+                                                                true
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                },
+                                                {
+                                                    "conditions": [],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                }
+                                            ],
+                                            "type": "tree"
+                                        },
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        6,
+                                                        20,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneId"
+                                                },
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        20,
+                                                        22,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                {
+                                                    "fn": "stringEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "s3expressAvailabilityZoneDelim"
+                                                        },
+                                                        "--"
+                                                    ]
+                                                }
+                                            ],
+                                            "rules": [
+                                                {
+                                                    "conditions": [
+                                                        {
+                                                            "fn": "booleanEquals",
+                                                            "argv": [
+                                                                {
+                                                                    "ref": "UseFIPS"
+                                                                },
+                                                                true
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                },
+                                                {
+                                                    "conditions": [],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                }
+                                            ],
+                                            "type": "tree"
+                                        },
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        6,
+                                                        26,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneId"
+                                                },
+                                                {
+                                                    "fn": "substring",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "Bucket"
+                                                        },
+                                                        26,
+                                                        28,
+                                                        true
+                                                    ],
+                                                    "assign": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                {
+                                                    "fn": "stringEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "s3expressAvailabilityZoneDelim"
+                                                        },
+                                                        "--"
+                                                    ]
+                                                }
+                                            ],
+                                            "rules": [
+                                                {
+                                                    "conditions": [
+                                                        {
+                                                            "fn": "booleanEquals",
+                                                            "argv": [
+                                                                {
+                                                                    "ref": "UseFIPS"
+                                                                },
+                                                                true
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                },
+                                                {
+                                                    "conditions": [],
+                                                    "endpoint": {
+                                                        "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                        "properties": {
+                                                            "backend": "S3Express",
+                                                            "authSchemes": [
+                                                                {
+                                                                    "disableDoubleEncoding": true,
+                                                                    "name": "sigv4",
+                                                                    "signingName": "s3express",
+                                                                    "signingRegion": "{Region}"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "headers": {}
+                                                    },
+                                                    "type": "endpoint"
+                                                }
+                                            ],
+                                            "type": "tree"
+                                        },
+                                        {
+                                            "conditions": [],
+                                            "error": "Unrecognized S3Express bucket name format.",
+                                            "type": "error"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                6,
+                                                14,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneId"
+                                        },
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                14,
+                                                16,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneDelim"
+                                        },
+                                        {
+                                            "fn": "stringEquals",
+                                            "argv": [
+                                                {
+                                                    "ref": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                "--"
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "booleanEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "UseFIPS"
+                                                        },
+                                                        true
+                                                    ]
+                                                }
+                                            ],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        },
+                                        {
+                                            "conditions": [],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                6,
+                                                15,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneId"
+                                        },
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                15,
+                                                17,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneDelim"
+                                        },
+                                        {
+                                            "fn": "stringEquals",
+                                            "argv": [
+                                                {
+                                                    "ref": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                "--"
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "booleanEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "UseFIPS"
+                                                        },
+                                                        true
+                                                    ]
+                                                }
+                                            ],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        },
+                                        {
+                                            "conditions": [],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                6,
+                                                19,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneId"
+                                        },
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                19,
+                                                21,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneDelim"
+                                        },
+                                        {
+                                            "fn": "stringEquals",
+                                            "argv": [
+                                                {
+                                                    "ref": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                "--"
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "booleanEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "UseFIPS"
+                                                        },
+                                                        true
+                                                    ]
+                                                }
+                                            ],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        },
+                                        {
+                                            "conditions": [],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                6,
+                                                20,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneId"
+                                        },
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                20,
+                                                22,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneDelim"
+                                        },
+                                        {
+                                            "fn": "stringEquals",
+                                            "argv": [
+                                                {
+                                                    "ref": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                "--"
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "booleanEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "UseFIPS"
+                                                        },
+                                                        true
+                                                    ]
+                                                }
+                                            ],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        },
+                                        {
+                                            "conditions": [],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                6,
+                                                26,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneId"
+                                        },
+                                        {
+                                            "fn": "substring",
+                                            "argv": [
+                                                {
+                                                    "ref": "Bucket"
+                                                },
+                                                26,
+                                                28,
+                                                true
+                                            ],
+                                            "assign": "s3expressAvailabilityZoneDelim"
+                                        },
+                                        {
+                                            "fn": "stringEquals",
+                                            "argv": [
+                                                {
+                                                    "ref": "s3expressAvailabilityZoneDelim"
+                                                },
+                                                "--"
+                                            ]
+                                        }
+                                    ],
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "fn": "booleanEquals",
+                                                    "argv": [
+                                                        {
+                                                            "ref": "UseFIPS"
+                                                        },
+                                                        true
+                                                    ]
+                                                }
+                                            ],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-fips-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        },
+                                        {
+                                            "conditions": [],
+                                            "endpoint": {
+                                                "url": "https://{Bucket}.s3express-{s3expressAvailabilityZoneId}.{Region}.amazonaws.com",
+                                                "properties": {
+                                                    "backend": "S3Express",
+                                                    "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4-s3express",
+                                                            "signingName": "s3express",
+                                                            "signingRegion": "{Region}"
+                                                        }
+                                                    ]
+                                                },
+                                                "headers": {}
+                                            },
+                                            "type": "endpoint"
+                                        }
+                                    ],
+                                    "type": "tree"
+                                },
+                                {
+                                    "conditions": [],
+                                    "error": "Unrecognized S3Express bucket name format.",
+                                    "type": "error"
+                                }
+                            ],
+                            "type": "tree"
+                        },
+                        {
+                            "conditions": [],
+                            "error": "S3Express bucket name is not a valid virtual hostable name.",
+                            "type": "error"
+                        }
+                    ],
+                    "type": "tree"
+                },
+                {
+                    "conditions": [
+                        {
+                            "fn": "not",
+                            "argv": [
+                                {
+                                    "fn": "isSet",
+                                    "argv": [
+                                        {
+                                            "ref": "Bucket"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "fn": "isSet",
+                            "argv": [
+                                {
+                                    "ref": "UseS3ExpressControlEndpoint"
+                                }
+                            ]
+                        },
+                        {
+                            "fn": "booleanEquals",
+                            "argv": [
+                                {
+                                    "ref": "UseS3ExpressControlEndpoint"
+                                },
+                                true
+                            ]
+                        }
+                    ],
+                    "rules": [
+                        {
+                            "conditions": [
+                                {
+                                    "fn": "isSet",
+                                    "argv": [
+                                        {
+                                            "ref": "Endpoint"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "fn": "parseURL",
+                                    "argv": [
+                                        {
+                                            "ref": "Endpoint"
+                                        }
+                                    ],
+                                    "assign": "url"
+                                }
+                            ],
+                            "endpoint": {
+                                "url": "{url#scheme}://{url#authority}{url#path}",
+                                "properties": {
+                                    "backend": "S3Express",
+                                    "authSchemes": [
+                                        {
+                                            "disableDoubleEncoding": true,
+                                            "name": "sigv4",
+                                            "signingName": "s3express",
+                                            "signingRegion": "{Region}"
+                                        }
+                                    ]
+                                },
+                                "headers": {}
+                            },
+                            "type": "endpoint"
+                        },
+                        {
+                            "conditions": [
+                                {
+                                    "fn": "booleanEquals",
+                                    "argv": [
+                                        {
+                                            "ref": "UseFIPS"
+                                        },
+                                        true
+                                    ]
+                                }
+                            ],
+                            "endpoint": {
+                                "url": "https://s3express-control-fips.{Region}.amazonaws.com",
+                                "properties": {
+                                    "backend": "S3Express",
+                                    "authSchemes": [
+                                        {
+                                            "disableDoubleEncoding": true,
+                                            "name": "sigv4",
+                                            "signingName": "s3express",
+                                            "signingRegion": "{Region}"
+                                        }
+                                    ]
+                                },
+                                "headers": {}
+                            },
+                            "type": "endpoint"
+                        },
+                        {
+                            "conditions": [],
+                            "endpoint": {
+                                "url": "https://s3express-control.{Region}.amazonaws.com",
+                                "properties": {
+                                    "backend": "S3Express",
+                                    "authSchemes": [
+                                        {
+                                            "disableDoubleEncoding": true,
+                                            "name": "sigv4",
+                                            "signingName": "s3express",
+                                            "signingRegion": "{Region}"
+                                        }
+                                    ]
+                                },
+                                "headers": {}
+                            },
+                            "type": "endpoint"
+                        }
+                    ],
+                    "type": "tree"
+                },
+                {
+                    "conditions": [
+                        {
+                            "fn": "isSet",
+                            "argv": [
+                                {
+                                    "ref": "Bucket"
+                                }
+                            ]
+                        },
+                        {
+                            "fn": "substring",
+                            "argv": [
+                                {
+                                    "ref": "Bucket"
+                                },
                                 49,
                                 50,
                                 true
@@ -300,7 +1790,6 @@
                             ]
                         }
                     ],
-                    "type": "tree",
                     "rules": [
                         {
                             "conditions": [
@@ -314,7 +1803,6 @@
                                     ]
                                 }
                             ],
-                            "type": "tree",
                             "rules": [
                                 {
                                     "conditions": [
@@ -328,7 +1816,6 @@
                                             ]
                                         }
                                     ],
-                                    "type": "tree",
                                     "rules": [
                                         {
                                             "conditions": [
@@ -342,7 +1829,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -389,6 +1875,14 @@
                                                             "authSchemes": [
                                                                 {
                                                                     "disableDoubleEncoding": true,
+                                                                    "name": "sigv4a",
+                                                                    "signingName": "s3-outposts",
+                                                                    "signingRegionSet": [
+                                                                        "*"
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "disableDoubleEncoding": true,
                                                                     "name": "sigv4",
                                                                     "signingName": "s3-outposts",
                                                                     "signingRegion": "{Region}"
@@ -399,7 +1893,8 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [],
@@ -407,6 +1902,14 @@
                                                 "url": "https://{Bucket}.ec2.s3-outposts.{Region}.{regionPartition#dnsSuffix}",
                                                 "properties": {
                                                     "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4a",
+                                                            "signingName": "s3-outposts",
+                                                            "signingRegionSet": [
+                                                                "*"
+                                                            ]
+                                                        },
                                                         {
                                                             "disableDoubleEncoding": true,
                                                             "name": "sigv4",
@@ -419,7 +1922,8 @@
                                             },
                                             "type": "endpoint"
                                         }
-                                    ]
+                                    ],
+                                    "type": "tree"
                                 },
                                 {
                                     "conditions": [
@@ -433,7 +1937,6 @@
                                             ]
                                         }
                                     ],
-                                    "type": "tree",
                                     "rules": [
                                         {
                                             "conditions": [
@@ -447,7 +1950,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -494,6 +1996,14 @@
                                                             "authSchemes": [
                                                                 {
                                                                     "disableDoubleEncoding": true,
+                                                                    "name": "sigv4a",
+                                                                    "signingName": "s3-outposts",
+                                                                    "signingRegionSet": [
+                                                                        "*"
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "disableDoubleEncoding": true,
                                                                     "name": "sigv4",
                                                                     "signingName": "s3-outposts",
                                                                     "signingRegion": "{Region}"
@@ -504,7 +2014,8 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [],
@@ -512,6 +2023,14 @@
                                                 "url": "https://{Bucket}.op-{outpostId}.s3-outposts.{Region}.{regionPartition#dnsSuffix}",
                                                 "properties": {
                                                     "authSchemes": [
+                                                        {
+                                                            "disableDoubleEncoding": true,
+                                                            "name": "sigv4a",
+                                                            "signingName": "s3-outposts",
+                                                            "signingRegionSet": [
+                                                                "*"
+                                                            ]
+                                                        },
                                                         {
                                                             "disableDoubleEncoding": true,
                                                             "name": "sigv4",
@@ -524,21 +2043,24 @@
                                             },
                                             "type": "endpoint"
                                         }
-                                    ]
+                                    ],
+                                    "type": "tree"
                                 },
                                 {
                                     "conditions": [],
                                     "error": "Unrecognized hardware type: \"Expected hardware type o or e but got {hardwareType}\"",
                                     "type": "error"
                                 }
-                            ]
+                            ],
+                            "type": "tree"
                         },
                         {
                             "conditions": [],
                             "error": "Invalid ARN: The outpost Id must only contain a-z, A-Z, 0-9 and `-`.",
                             "type": "error"
                         }
-                    ]
+                    ],
+                    "type": "tree"
                 },
                 {
                     "conditions": [
@@ -551,7 +2073,6 @@
                             ]
                         }
                     ],
-                    "type": "tree",
                     "rules": [
                         {
                             "conditions": [
@@ -606,7 +2127,6 @@
                                     ]
                                 }
                             ],
-                            "type": "tree",
                             "rules": [
                                 {
                                     "conditions": [
@@ -620,7 +2140,6 @@
                                             "assign": "partitionResult"
                                         }
                                     ],
-                                    "type": "tree",
                                     "rules": [
                                         {
                                             "conditions": [
@@ -634,7 +2153,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -800,7 +2318,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [],
@@ -820,7 +2337,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -1038,7 +2556,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [],
@@ -1058,7 +2575,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -1276,7 +2794,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [],
@@ -1296,7 +2813,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -1514,7 +3032,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [],
@@ -1534,7 +3051,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -1877,7 +3395,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -1925,7 +3442,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -2012,7 +3530,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -2060,7 +3577,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -2398,7 +3916,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -2446,7 +3963,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -2664,7 +4182,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -2712,7 +4229,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -2796,16 +4314,19 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [],
                                             "error": "Invalid region: region was not a valid DNS name.",
                                             "type": "error"
                                         }
-                                    ]
+                                    ],
+                                    "type": "tree"
                                 }
-                            ]
+                            ],
+                            "type": "tree"
                         },
                         {
                             "conditions": [
@@ -2887,7 +4408,6 @@
                                     ]
                                 }
                             ],
-                            "type": "tree",
                             "rules": [
                                 {
                                     "conditions": [
@@ -2901,7 +4421,6 @@
                                             "assign": "partitionResult"
                                         }
                                     ],
-                                    "type": "tree",
                                     "rules": [
                                         {
                                             "conditions": [
@@ -2915,7 +4434,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [],
@@ -2935,16 +4453,19 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [],
                                             "error": "Invalid region: region was not a valid DNS name.",
                                             "type": "error"
                                         }
-                                    ]
+                                    ],
+                                    "type": "tree"
                                 }
-                            ]
+                            ],
+                            "type": "tree"
                         },
                         {
                             "conditions": [
@@ -2967,7 +4488,6 @@
                                     "assign": "bucketArn"
                                 }
                             ],
-                            "type": "tree",
                             "rules": [
                                 {
                                     "conditions": [
@@ -2996,7 +4516,6 @@
                                             ]
                                         }
                                     ],
-                                    "type": "tree",
                                     "rules": [
                                         {
                                             "conditions": [
@@ -3016,7 +4535,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -3030,7 +4548,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -3059,7 +4576,6 @@
                                                                     ]
                                                                 }
                                                             ],
-                                                            "type": "tree",
                                                             "rules": [
                                                                 {
                                                                     "conditions": [
@@ -3114,7 +4630,6 @@
                                                                             ]
                                                                         }
                                                                     ],
-                                                                    "type": "tree",
                                                                     "rules": [
                                                                         {
                                                                             "conditions": [
@@ -3161,7 +4676,6 @@
                                                                                     ]
                                                                                 }
                                                                             ],
-                                                                            "type": "tree",
                                                                             "rules": [
                                                                                 {
                                                                                     "conditions": [
@@ -3224,7 +4738,6 @@
                                                                                             "assign": "bucketPartition"
                                                                                         }
                                                                                     ],
-                                                                                    "type": "tree",
                                                                                     "rules": [
                                                                                         {
                                                                                             "conditions": [
@@ -3238,7 +4751,6 @@
                                                                                                     "assign": "partitionResult"
                                                                                                 }
                                                                                             ],
-                                                                                            "type": "tree",
                                                                                             "rules": [
                                                                                                 {
                                                                                                     "conditions": [
@@ -3266,7 +4778,6 @@
                                                                                                             ]
                                                                                                         }
                                                                                                     ],
-                                                                                                    "type": "tree",
                                                                                                     "rules": [
                                                                                                         {
                                                                                                             "conditions": [
@@ -3286,7 +4797,6 @@
                                                                                                                     ]
                                                                                                                 }
                                                                                                             ],
-                                                                                                            "type": "tree",
                                                                                                             "rules": [
                                                                                                                 {
                                                                                                                     "conditions": [
@@ -3327,7 +4837,6 @@
                                                                                                                             ]
                                                                                                                         }
                                                                                                                     ],
-                                                                                                                    "type": "tree",
                                                                                                                     "rules": [
                                                                                                                         {
                                                                                                                             "conditions": [
@@ -3341,7 +4850,6 @@
                                                                                                                                     ]
                                                                                                                                 }
                                                                                                                             ],
-                                                                                                                            "type": "tree",
                                                                                                                             "rules": [
                                                                                                                                 {
                                                                                                                                     "conditions": [
@@ -3425,67 +4933,78 @@
                                                                                                                                     },
                                                                                                                                     "type": "endpoint"
                                                                                                                                 }
-                                                                                                                            ]
+                                                                                                                            ],
+                                                                                                                            "type": "tree"
                                                                                                                         },
                                                                                                                         {
                                                                                                                             "conditions": [],
                                                                                                                             "error": "Invalid ARN: The access point name may only contain a-z, A-Z, 0-9 and `-`. Found: `{accessPointName}`",
                                                                                                                             "type": "error"
                                                                                                                         }
-                                                                                                                    ]
+                                                                                                                    ],
+                                                                                                                    "type": "tree"
                                                                                                                 },
                                                                                                                 {
                                                                                                                     "conditions": [],
                                                                                                                     "error": "Invalid ARN: The account id may only contain a-z, A-Z, 0-9 and `-`. Found: `{bucketArn#accountId}`",
                                                                                                                     "type": "error"
                                                                                                                 }
-                                                                                                            ]
+                                                                                                            ],
+                                                                                                            "type": "tree"
                                                                                                         },
                                                                                                         {
                                                                                                             "conditions": [],
                                                                                                             "error": "Invalid region in ARN: `{bucketArn#region}` (invalid DNS name)",
                                                                                                             "type": "error"
                                                                                                         }
-                                                                                                    ]
+                                                                                                    ],
+                                                                                                    "type": "tree"
                                                                                                 },
                                                                                                 {
                                                                                                     "conditions": [],
                                                                                                     "error": "Client was configured for partition `{partitionResult#name}` but ARN (`{Bucket}`) has `{bucketPartition#name}`",
                                                                                                     "type": "error"
                                                                                                 }
-                                                                                            ]
+                                                                                            ],
+                                                                                            "type": "tree"
                                                                                         }
-                                                                                    ]
+                                                                                    ],
+                                                                                    "type": "tree"
                                                                                 }
-                                                                            ]
+                                                                            ],
+                                                                            "type": "tree"
                                                                         },
                                                                         {
                                                                             "conditions": [],
                                                                             "error": "Invalid ARN: The ARN may only contain a single resource component after `accesspoint`.",
                                                                             "type": "error"
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "type": "tree"
                                                                 },
                                                                 {
                                                                     "conditions": [],
                                                                     "error": "Invalid ARN: bucket ARN is missing a region",
                                                                     "type": "error"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "type": "tree"
                                                         },
                                                         {
                                                             "conditions": [],
                                                             "error": "Invalid ARN: Expected a resource of the format `accesspoint:<accesspoint name>` but no name was provided",
                                                             "type": "error"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [],
                                                     "error": "Invalid ARN: Object Lambda ARNs only support `accesspoint` arn types, but found: `{arnType}`",
                                                     "type": "error"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [
@@ -3499,7 +5018,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -3528,7 +5046,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -3553,7 +5070,6 @@
                                                                     ]
                                                                 }
                                                             ],
-                                                            "type": "tree",
                                                             "rules": [
                                                                 {
                                                                     "conditions": [
@@ -3567,7 +5083,6 @@
                                                                             ]
                                                                         }
                                                                     ],
-                                                                    "type": "tree",
                                                                     "rules": [
                                                                         {
                                                                             "conditions": [
@@ -3592,7 +5107,6 @@
                                                                                     ]
                                                                                 }
                                                                             ],
-                                                                            "type": "tree",
                                                                             "rules": [
                                                                                 {
                                                                                     "conditions": [
@@ -3639,7 +5153,6 @@
                                                                                             ]
                                                                                         }
                                                                                     ],
-                                                                                    "type": "tree",
                                                                                     "rules": [
                                                                                         {
                                                                                             "conditions": [
@@ -3702,7 +5215,6 @@
                                                                                                     "assign": "bucketPartition"
                                                                                                 }
                                                                                             ],
-                                                                                            "type": "tree",
                                                                                             "rules": [
                                                                                                 {
                                                                                                     "conditions": [
@@ -3716,7 +5228,6 @@
                                                                                                             "assign": "partitionResult"
                                                                                                         }
                                                                                                     ],
-                                                                                                    "type": "tree",
                                                                                                     "rules": [
                                                                                                         {
                                                                                                             "conditions": [
@@ -3736,7 +5247,6 @@
                                                                                                                     ]
                                                                                                                 }
                                                                                                             ],
-                                                                                                            "type": "tree",
                                                                                                             "rules": [
                                                                                                                 {
                                                                                                                     "conditions": [
@@ -3756,7 +5266,6 @@
                                                                                                                             ]
                                                                                                                         }
                                                                                                                     ],
-                                                                                                                    "type": "tree",
                                                                                                                     "rules": [
                                                                                                                         {
                                                                                                                             "conditions": [
@@ -3776,7 +5285,6 @@
                                                                                                                                     ]
                                                                                                                                 }
                                                                                                                             ],
-                                                                                                                            "type": "tree",
                                                                                                                             "rules": [
                                                                                                                                 {
                                                                                                                                     "conditions": [
@@ -3796,7 +5304,6 @@
                                                                                                                                             ]
                                                                                                                                         }
                                                                                                                                     ],
-                                                                                                                                    "type": "tree",
                                                                                                                                     "rules": [
                                                                                                                                         {
                                                                                                                                             "conditions": [
@@ -3810,7 +5317,6 @@
                                                                                                                                                     ]
                                                                                                                                                 }
                                                                                                                                             ],
-                                                                                                                                            "type": "tree",
                                                                                                                                             "rules": [
                                                                                                                                                 {
                                                                                                                                                     "conditions": [
@@ -4029,57 +5535,68 @@
                                                                                                                                                     },
                                                                                                                                                     "type": "endpoint"
                                                                                                                                                 }
-                                                                                                                                            ]
+                                                                                                                                            ],
+                                                                                                                                            "type": "tree"
                                                                                                                                         },
                                                                                                                                         {
                                                                                                                                             "conditions": [],
                                                                                                                                             "error": "Invalid ARN: The access point name may only contain a-z, A-Z, 0-9 and `-`. Found: `{accessPointName}`",
                                                                                                                                             "type": "error"
                                                                                                                                         }
-                                                                                                                                    ]
+                                                                                                                                    ],
+                                                                                                                                    "type": "tree"
                                                                                                                                 },
                                                                                                                                 {
                                                                                                                                     "conditions": [],
                                                                                                                                     "error": "Invalid ARN: The account id may only contain a-z, A-Z, 0-9 and `-`. Found: `{bucketArn#accountId}`",
                                                                                                                                     "type": "error"
                                                                                                                                 }
-                                                                                                                            ]
+                                                                                                                            ],
+                                                                                                                            "type": "tree"
                                                                                                                         },
                                                                                                                         {
                                                                                                                             "conditions": [],
                                                                                                                             "error": "Invalid ARN: The ARN was not for the S3 service, found: {bucketArn#service}",
                                                                                                                             "type": "error"
                                                                                                                         }
-                                                                                                                    ]
+                                                                                                                    ],
+                                                                                                                    "type": "tree"
                                                                                                                 },
                                                                                                                 {
                                                                                                                     "conditions": [],
                                                                                                                     "error": "Invalid region in ARN: `{bucketArn#region}` (invalid DNS name)",
                                                                                                                     "type": "error"
                                                                                                                 }
-                                                                                                            ]
+                                                                                                            ],
+                                                                                                            "type": "tree"
                                                                                                         },
                                                                                                         {
                                                                                                             "conditions": [],
                                                                                                             "error": "Client was configured for partition `{partitionResult#name}` but ARN (`{Bucket}`) has `{bucketPartition#name}`",
                                                                                                             "type": "error"
                                                                                                         }
-                                                                                                    ]
+                                                                                                    ],
+                                                                                                    "type": "tree"
                                                                                                 }
-                                                                                            ]
+                                                                                            ],
+                                                                                            "type": "tree"
                                                                                         }
-                                                                                    ]
+                                                                                    ],
+                                                                                    "type": "tree"
                                                                                 },
                                                                                 {
                                                                                     "conditions": [],
                                                                                     "error": "Invalid ARN: The ARN may only contain a single resource component after `accesspoint`.",
                                                                                     "type": "error"
                                                                                 }
-                                                                            ]
+                                                                            ],
+                                                                            "type": "tree"
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "type": "tree"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "type": "tree"
                                                         },
                                                         {
                                                             "conditions": [
@@ -4093,7 +5610,6 @@
                                                                     ]
                                                                 }
                                                             ],
-                                                            "type": "tree",
                                                             "rules": [
                                                                 {
                                                                     "conditions": [
@@ -4167,7 +5683,6 @@
                                                                             "assign": "mrapPartition"
                                                                         }
                                                                     ],
-                                                                    "type": "tree",
                                                                     "rules": [
                                                                         {
                                                                             "conditions": [
@@ -4195,7 +5710,6 @@
                                                                                     ]
                                                                                 }
                                                                             ],
-                                                                            "type": "tree",
                                                                             "rules": [
                                                                                 {
                                                                                     "conditions": [],
@@ -4217,30 +5731,35 @@
                                                                                     },
                                                                                     "type": "endpoint"
                                                                                 }
-                                                                            ]
+                                                                            ],
+                                                                            "type": "tree"
                                                                         },
                                                                         {
                                                                             "conditions": [],
                                                                             "error": "Client was configured for partition `{mrapPartition#name}` but bucket referred to partition `{bucketArn#partition}`",
                                                                             "type": "error"
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "type": "tree"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "type": "tree"
                                                         },
                                                         {
                                                             "conditions": [],
                                                             "error": "Invalid Access Point Name",
                                                             "type": "error"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [],
                                                     "error": "Invalid ARN: Expected a resource of the format `accesspoint:<accesspoint name>` but no name was provided",
                                                     "type": "error"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [
@@ -4260,7 +5779,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -4340,7 +5858,6 @@
                                                             "assign": "outpostId"
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -4354,7 +5871,6 @@
                                                                     ]
                                                                 }
                                                             ],
-                                                            "type": "tree",
                                                             "rules": [
                                                                 {
                                                                     "conditions": [
@@ -4417,7 +5933,6 @@
                                                                             "assign": "bucketPartition"
                                                                         }
                                                                     ],
-                                                                    "type": "tree",
                                                                     "rules": [
                                                                         {
                                                                             "conditions": [
@@ -4431,7 +5946,6 @@
                                                                                     "assign": "partitionResult"
                                                                                 }
                                                                             ],
-                                                                            "type": "tree",
                                                                             "rules": [
                                                                                 {
                                                                                     "conditions": [
@@ -4459,7 +5973,6 @@
                                                                                             ]
                                                                                         }
                                                                                     ],
-                                                                                    "type": "tree",
                                                                                     "rules": [
                                                                                         {
                                                                                             "conditions": [
@@ -4479,7 +5992,6 @@
                                                                                                     ]
                                                                                                 }
                                                                                             ],
-                                                                                            "type": "tree",
                                                                                             "rules": [
                                                                                                 {
                                                                                                     "conditions": [
@@ -4499,7 +6011,6 @@
                                                                                                             ]
                                                                                                         }
                                                                                                     ],
-                                                                                                    "type": "tree",
                                                                                                     "rules": [
                                                                                                         {
                                                                                                             "conditions": [
@@ -4514,7 +6025,6 @@
                                                                                                                     "assign": "outpostType"
                                                                                                                 }
                                                                                                             ],
-                                                                                                            "type": "tree",
                                                                                                             "rules": [
                                                                                                                 {
                                                                                                                     "conditions": [
@@ -4529,7 +6039,6 @@
                                                                                                                             "assign": "accessPointName"
                                                                                                                         }
                                                                                                                     ],
-                                                                                                                    "type": "tree",
                                                                                                                     "rules": [
                                                                                                                         {
                                                                                                                             "conditions": [
@@ -4543,7 +6052,6 @@
                                                                                                                                     ]
                                                                                                                                 }
                                                                                                                             ],
-                                                                                                                            "type": "tree",
                                                                                                                             "rules": [
                                                                                                                                 {
                                                                                                                                     "conditions": [
@@ -4571,6 +6079,14 @@
                                                                                                                                             "authSchemes": [
                                                                                                                                                 {
                                                                                                                                                     "disableDoubleEncoding": true,
+                                                                                                                                                    "name": "sigv4a",
+                                                                                                                                                    "signingName": "s3-outposts",
+                                                                                                                                                    "signingRegionSet": [
+                                                                                                                                                        "*"
+                                                                                                                                                    ]
+                                                                                                                                                },
+                                                                                                                                                {
+                                                                                                                                                    "disableDoubleEncoding": true,
                                                                                                                                                     "name": "sigv4",
                                                                                                                                                     "signingName": "s3-outposts",
                                                                                                                                                     "signingRegion": "{bucketArn#region}"
@@ -4589,6 +6105,14 @@
                                                                                                                                             "authSchemes": [
                                                                                                                                                 {
                                                                                                                                                     "disableDoubleEncoding": true,
+                                                                                                                                                    "name": "sigv4a",
+                                                                                                                                                    "signingName": "s3-outposts",
+                                                                                                                                                    "signingRegionSet": [
+                                                                                                                                                        "*"
+                                                                                                                                                    ]
+                                                                                                                                                },
+                                                                                                                                                {
+                                                                                                                                                    "disableDoubleEncoding": true,
                                                                                                                                                     "name": "sigv4",
                                                                                                                                                     "signingName": "s3-outposts",
                                                                                                                                                     "signingRegion": "{bucketArn#region}"
@@ -4599,81 +6123,94 @@
                                                                                                                                     },
                                                                                                                                     "type": "endpoint"
                                                                                                                                 }
-                                                                                                                            ]
+                                                                                                                            ],
+                                                                                                                            "type": "tree"
                                                                                                                         },
                                                                                                                         {
                                                                                                                             "conditions": [],
                                                                                                                             "error": "Expected an outpost type `accesspoint`, found {outpostType}",
                                                                                                                             "type": "error"
                                                                                                                         }
-                                                                                                                    ]
+                                                                                                                    ],
+                                                                                                                    "type": "tree"
                                                                                                                 },
                                                                                                                 {
                                                                                                                     "conditions": [],
                                                                                                                     "error": "Invalid ARN: expected an access point name",
                                                                                                                     "type": "error"
                                                                                                                 }
-                                                                                                            ]
+                                                                                                            ],
+                                                                                                            "type": "tree"
                                                                                                         },
                                                                                                         {
                                                                                                             "conditions": [],
                                                                                                             "error": "Invalid ARN: Expected a 4-component resource",
                                                                                                             "type": "error"
                                                                                                         }
-                                                                                                    ]
+                                                                                                    ],
+                                                                                                    "type": "tree"
                                                                                                 },
                                                                                                 {
                                                                                                     "conditions": [],
                                                                                                     "error": "Invalid ARN: The account id may only contain a-z, A-Z, 0-9 and `-`. Found: `{bucketArn#accountId}`",
                                                                                                     "type": "error"
                                                                                                 }
-                                                                                            ]
+                                                                                            ],
+                                                                                            "type": "tree"
                                                                                         },
                                                                                         {
                                                                                             "conditions": [],
                                                                                             "error": "Invalid region in ARN: `{bucketArn#region}` (invalid DNS name)",
                                                                                             "type": "error"
                                                                                         }
-                                                                                    ]
+                                                                                    ],
+                                                                                    "type": "tree"
                                                                                 },
                                                                                 {
                                                                                     "conditions": [],
                                                                                     "error": "Client was configured for partition `{partitionResult#name}` but ARN (`{Bucket}`) has `{bucketPartition#name}`",
                                                                                     "type": "error"
                                                                                 }
-                                                                            ]
+                                                                            ],
+                                                                            "type": "tree"
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "type": "tree"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "type": "tree"
                                                         },
                                                         {
                                                             "conditions": [],
                                                             "error": "Invalid ARN: The outpost Id may only contain a-z, A-Z, 0-9 and `-`. Found: `{outpostId}`",
                                                             "type": "error"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [],
                                                     "error": "Invalid ARN: The Outpost Id was not set",
                                                     "type": "error"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [],
                                             "error": "Invalid ARN: Unrecognized format: {Bucket} (type: {arnType})",
                                             "type": "error"
                                         }
-                                    ]
+                                    ],
+                                    "type": "tree"
                                 },
                                 {
                                     "conditions": [],
                                     "error": "Invalid ARN: No ARN type specified",
                                     "type": "error"
                                 }
-                            ]
+                            ],
+                            "type": "tree"
                         },
                         {
                             "conditions": [
@@ -4755,7 +6292,6 @@
                                     "assign": "uri_encoded_bucket"
                                 }
                             ],
-                            "type": "tree",
                             "rules": [
                                 {
                                     "conditions": [
@@ -4769,7 +6305,6 @@
                                             "assign": "partitionResult"
                                         }
                                     ],
-                                    "type": "tree",
                                     "rules": [
                                         {
                                             "conditions": [
@@ -4783,7 +6318,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -4901,7 +6435,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [],
@@ -4921,7 +6454,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -5112,7 +6646,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [],
@@ -5132,7 +6665,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -5323,7 +6857,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [],
@@ -5343,7 +6876,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -5542,7 +7076,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -5590,7 +7123,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -5785,7 +7319,6 @@
                                                             ]
                                                         }
                                                     ],
-                                                    "type": "tree",
                                                     "rules": [
                                                         {
                                                             "conditions": [
@@ -5833,7 +7366,8 @@
                                                             },
                                                             "type": "endpoint"
                                                         }
-                                                    ]
+                                                    ],
+                                                    "type": "tree"
                                                 },
                                                 {
                                                     "conditions": [
@@ -5908,18 +7442,22 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [],
                                             "error": "Path-style addressing cannot be used with S3 Accelerate",
                                             "type": "error"
                                         }
-                                    ]
+                                    ],
+                                    "type": "tree"
                                 }
-                            ]
+                            ],
+                            "type": "tree"
                         }
-                    ]
+                    ],
+                    "type": "tree"
                 },
                 {
                     "conditions": [
@@ -5941,7 +7479,6 @@
                             ]
                         }
                     ],
-                    "type": "tree",
                     "rules": [
                         {
                             "conditions": [
@@ -5955,7 +7492,6 @@
                                     "assign": "partitionResult"
                                 }
                             ],
-                            "type": "tree",
                             "rules": [
                                 {
                                     "conditions": [
@@ -5969,7 +7505,6 @@
                                             ]
                                         }
                                     ],
-                                    "type": "tree",
                                     "rules": [
                                         {
                                             "conditions": [
@@ -6083,16 +7618,19 @@
                                             },
                                             "type": "endpoint"
                                         }
-                                    ]
+                                    ],
+                                    "type": "tree"
                                 },
                                 {
                                     "conditions": [],
                                     "error": "Invalid region: region was not a valid DNS name.",
                                     "type": "error"
                                 }
-                            ]
+                            ],
+                            "type": "tree"
                         }
-                    ]
+                    ],
+                    "type": "tree"
                 },
                 {
                     "conditions": [
@@ -6110,7 +7648,6 @@
                             ]
                         }
                     ],
-                    "type": "tree",
                     "rules": [
                         {
                             "conditions": [
@@ -6124,7 +7661,6 @@
                                     "assign": "partitionResult"
                                 }
                             ],
-                            "type": "tree",
                             "rules": [
                                 {
                                     "conditions": [
@@ -6138,7 +7674,6 @@
                                             ]
                                         }
                                     ],
-                                    "type": "tree",
                                     "rules": [
                                         {
                                             "conditions": [
@@ -6256,7 +7791,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [],
@@ -6276,7 +7810,8 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [
@@ -6467,7 +8002,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [],
@@ -6487,7 +8021,8 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [
@@ -6678,7 +8213,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [],
@@ -6698,7 +8232,8 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [
@@ -6897,7 +8432,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -6945,7 +8479,8 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [
@@ -7140,7 +8675,6 @@
                                                     ]
                                                 }
                                             ],
-                                            "type": "tree",
                                             "rules": [
                                                 {
                                                     "conditions": [
@@ -7188,7 +8722,8 @@
                                                     },
                                                     "type": "endpoint"
                                                 }
-                                            ]
+                                            ],
+                                            "type": "tree"
                                         },
                                         {
                                             "conditions": [
@@ -7263,18 +8798,22 @@
                                             },
                                             "type": "endpoint"
                                         }
-                                    ]
+                                    ],
+                                    "type": "tree"
                                 },
                                 {
                                     "conditions": [],
                                     "error": "Invalid region: region was not a valid DNS name.",
                                     "type": "error"
                                 }
-                            ]
+                            ],
+                            "type": "tree"
                         }
-                    ]
+                    ],
+                    "type": "tree"
                 }
-            ]
+            ],
+            "type": "tree"
         },
         {
             "conditions": [],

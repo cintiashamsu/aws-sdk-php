@@ -5,12 +5,14 @@
     "endpointPrefix":"wafv2",
     "jsonVersion":"1.1",
     "protocol":"json",
+    "protocols":["json"],
     "serviceAbbreviation":"WAFV2",
     "serviceFullName":"AWS WAFV2",
     "serviceId":"WAFV2",
     "signatureVersion":"v4",
     "targetPrefix":"AWSWAF_20190729",
-    "uid":"wafv2-2019-07-29"
+    "uid":"wafv2-2019-07-29",
+    "auth":["aws.auth#sigv4"]
   },
   "operations":{
     "AssociateWebACL":{
@@ -149,6 +151,22 @@
         {"shape":"WAFExpiredManagedRuleGroupVersionException"}
       ]
     },
+    "DeleteAPIKey":{
+      "name":"DeleteAPIKey",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeleteAPIKeyRequest"},
+      "output":{"shape":"DeleteAPIKeyResponse"},
+      "errors":[
+        {"shape":"WAFInternalErrorException"},
+        {"shape":"WAFNonexistentItemException"},
+        {"shape":"WAFOptimisticLockException"},
+        {"shape":"WAFInvalidParameterException"},
+        {"shape":"WAFInvalidOperationException"}
+      ]
+    },
     "DeleteFirewallManagerRuleGroups":{
       "name":"DeleteFirewallManagerRuleGroups",
       "http":{
@@ -281,7 +299,8 @@
       "output":{"shape":"DescribeAllManagedProductsResponse"},
       "errors":[
         {"shape":"WAFInvalidOperationException"},
-        {"shape":"WAFInternalErrorException"}
+        {"shape":"WAFInternalErrorException"},
+        {"shape":"WAFInvalidParameterException"}
       ]
     },
     "DescribeManagedProductsByVendor":{
@@ -355,6 +374,7 @@
       "output":{"shape":"GetDecryptedAPIKeyResponse"},
       "errors":[
         {"shape":"WAFInternalErrorException"},
+        {"shape":"WAFNonexistentItemException"},
         {"shape":"WAFInvalidParameterException"},
         {"shape":"WAFInvalidOperationException"},
         {"shape":"WAFInvalidResourceException"}
@@ -939,7 +959,8 @@
       "type":"structure",
       "required":["InspectionLevel"],
       "members":{
-        "InspectionLevel":{"shape":"InspectionLevel"}
+        "InspectionLevel":{"shape":"InspectionLevel"},
+        "EnableMachineLearning":{"shape":"EnableMachineLearning"}
       }
     },
     "Action":{"type":"string"},
@@ -1013,7 +1034,13 @@
     },
     "AssociatedResourceType":{
       "type":"string",
-      "enum":["CLOUDFRONT"]
+      "enum":[
+        "CLOUDFRONT",
+        "API_GATEWAY",
+        "COGNITO_USER_POOL",
+        "APP_RUNNER_SERVICE",
+        "VERIFIED_ACCESS_INSTANCE"
+      ]
     },
     "AssociationConfig":{
       "type":"structure",
@@ -1540,6 +1567,7 @@
         "Description":{"shape":"EntityDescription"},
         "Rules":{"shape":"Rules"},
         "VisibilityConfig":{"shape":"VisibilityConfig"},
+        "DataProtectionConfig":{"shape":"DataProtectionConfig"},
         "Tags":{"shape":"TagList"},
         "CustomResponseBodies":{"shape":"CustomResponseBodies"},
         "CaptchaConfig":{"shape":"CaptchaConfig"},
@@ -1621,11 +1649,60 @@
         "Content":{"shape":"ResponseContent"}
       }
     },
+    "DataProtection":{
+      "type":"structure",
+      "required":[
+        "Field",
+        "Action"
+      ],
+      "members":{
+        "Field":{"shape":"FieldToProtect"},
+        "Action":{"shape":"DataProtectionAction"},
+        "ExcludeRuleMatchDetails":{"shape":"Boolean"},
+        "ExcludeRateBasedDetails":{"shape":"Boolean"}
+      }
+    },
+    "DataProtectionAction":{
+      "type":"string",
+      "enum":[
+        "SUBSTITUTION",
+        "HASH"
+      ]
+    },
+    "DataProtectionConfig":{
+      "type":"structure",
+      "required":["DataProtections"],
+      "members":{
+        "DataProtections":{"shape":"DataProtections"}
+      }
+    },
+    "DataProtections":{
+      "type":"list",
+      "member":{"shape":"DataProtection"},
+      "max":26,
+      "min":1
+    },
     "DefaultAction":{
       "type":"structure",
       "members":{
         "Block":{"shape":"BlockAction"},
         "Allow":{"shape":"AllowAction"}
+      }
+    },
+    "DeleteAPIKeyRequest":{
+      "type":"structure",
+      "required":[
+        "Scope",
+        "APIKey"
+      ],
+      "members":{
+        "Scope":{"shape":"Scope"},
+        "APIKey":{"shape":"APIKey"}
+      }
+    },
+    "DeleteAPIKeyResponse":{
+      "type":"structure",
+      "members":{
       }
     },
     "DeleteFirewallManagerRuleGroupsRequest":{
@@ -1669,7 +1746,9 @@
       "type":"structure",
       "required":["ResourceArn"],
       "members":{
-        "ResourceArn":{"shape":"ResourceArn"}
+        "ResourceArn":{"shape":"ResourceArn"},
+        "LogType":{"shape":"LogType"},
+        "LogScope":{"shape":"LogScope"}
       }
     },
     "DeleteLoggingConfigurationResponse":{
@@ -1825,6 +1904,7 @@
         "Identifier":{"shape":"FieldIdentifier"}
       }
     },
+    "EnableMachineLearning":{"type":"boolean"},
     "EntityDescription":{
       "type":"string",
       "max":256,
@@ -1845,6 +1925,7 @@
     },
     "ErrorMessage":{"type":"string"},
     "ErrorReason":{"type":"string"},
+    "EvaluationWindowSec":{"type":"long"},
     "ExcludedRule":{
       "type":"structure",
       "required":["Name"],
@@ -1903,7 +1984,8 @@
         "JsonBody":{"shape":"JsonBody"},
         "Headers":{"shape":"Headers"},
         "Cookies":{"shape":"Cookies"},
-        "HeaderOrder":{"shape":"HeaderOrder"}
+        "HeaderOrder":{"shape":"HeaderOrder"},
+        "JA3Fingerprint":{"shape":"JA3Fingerprint"}
       }
     },
     "FieldToMatchData":{
@@ -1911,6 +1993,35 @@
       "max":64,
       "min":1,
       "pattern":".*\\S.*"
+    },
+    "FieldToProtect":{
+      "type":"structure",
+      "required":["FieldType"],
+      "members":{
+        "FieldType":{"shape":"FieldToProtectType"},
+        "FieldKeys":{"shape":"FieldToProtectKeys"}
+      }
+    },
+    "FieldToProtectKeyName":{
+      "type":"string",
+      "max":64,
+      "min":1,
+      "pattern":".*\\S.*"
+    },
+    "FieldToProtectKeys":{
+      "type":"list",
+      "member":{"shape":"FieldToProtectKeyName"},
+      "max":100
+    },
+    "FieldToProtectType":{
+      "type":"string",
+      "enum":[
+        "SINGLE_HEADER",
+        "SINGLE_COOKIE",
+        "SINGLE_QUERY_ARGUMENT",
+        "QUERY_STRING",
+        "BODY"
+      ]
     },
     "Filter":{
       "type":"structure",
@@ -2063,7 +2174,9 @@
       "type":"structure",
       "required":["ResourceArn"],
       "members":{
-        "ResourceArn":{"shape":"ResourceArn"}
+        "ResourceArn":{"shape":"ResourceArn"},
+        "LogType":{"shape":"LogType"},
+        "LogScope":{"shape":"LogScope"}
       }
     },
     "GetLoggingConfigurationResponse":{
@@ -2385,6 +2498,13 @@
         "TARGETED"
       ]
     },
+    "JA3Fingerprint":{
+      "type":"structure",
+      "required":["FallbackBehavior"],
+      "members":{
+        "FallbackBehavior":{"shape":"FallbackBehavior"}
+      }
+    },
     "JsonBody":{
       "type":"structure",
       "required":[
@@ -2566,7 +2686,8 @@
       "members":{
         "Scope":{"shape":"Scope"},
         "NextMarker":{"shape":"NextMarker"},
-        "Limit":{"shape":"PaginationLimit"}
+        "Limit":{"shape":"PaginationLimit"},
+        "LogScope":{"shape":"LogScope"}
       }
     },
     "ListLoggingConfigurationsResponse":{
@@ -2703,6 +2824,17 @@
       "max":100,
       "min":1
     },
+    "LogScope":{
+      "type":"string",
+      "enum":[
+        "CUSTOMER",
+        "SECURITY_LAKE"
+      ]
+    },
+    "LogType":{
+      "type":"string",
+      "enum":["WAF_LOGS"]
+    },
     "LoggingConfiguration":{
       "type":"structure",
       "required":[
@@ -2714,7 +2846,9 @@
         "LogDestinationConfigs":{"shape":"LogDestinationConfigs"},
         "RedactedFields":{"shape":"RedactedFields"},
         "ManagedByFirewallManager":{"shape":"Boolean"},
-        "LoggingFilter":{"shape":"LoggingFilter"}
+        "LoggingFilter":{"shape":"LoggingFilter"},
+        "LogType":{"shape":"LogType"},
+        "LogScope":{"shape":"LogScope"}
       }
     },
     "LoggingConfigurations":{
@@ -3017,7 +3151,8 @@
         "ASSOCIATED_RESOURCE_TYPE",
         "SCOPE_DOWN",
         "CUSTOM_KEYS",
-        "ACP_RULE_SET_RESPONSE_INSPECTION"
+        "ACP_RULE_SET_RESPONSE_INSPECTION",
+        "DATA_PROTECTION_CONFIG"
       ]
     },
     "ParameterExceptionParameter":{
@@ -3165,6 +3300,7 @@
       ],
       "members":{
         "Limit":{"shape":"RateLimit"},
+        "EvaluationWindowSec":{"shape":"EvaluationWindowSec"},
         "AggregateKeyType":{"shape":"RateBasedStatementAggregateKeyType"},
         "ScopeDownStatement":{"shape":"Statement"},
         "ForwardedIPConfig":{"shape":"ForwardedIPConfig"},
@@ -3197,8 +3333,7 @@
     "RateBasedStatementCustomKeys":{
       "type":"list",
       "member":{"shape":"RateBasedStatementCustomKey"},
-      "max":5,
-      "min":1
+      "max":5
     },
     "RateBasedStatementManagedKeysIPSet":{
       "type":"structure",
@@ -3210,7 +3345,7 @@
     "RateLimit":{
       "type":"long",
       "max":2000000000,
-      "min":100
+      "min":10
     },
     "RateLimitCookie":{
       "type":"structure",
@@ -3603,8 +3738,7 @@
     "RuleActionOverrides":{
       "type":"list",
       "member":{"shape":"RuleActionOverride"},
-      "max":100,
-      "min":1
+      "max":100
     },
     "RuleGroup":{
       "type":"structure",
@@ -3764,6 +3898,7 @@
       ]
     },
     "SolveTimestamp":{"type":"long"},
+    "SourceType":{"type":"string"},
     "SqliMatchStatement":{
       "type":"structure",
       "required":[
@@ -4081,6 +4216,7 @@
         "Description":{"shape":"EntityDescription"},
         "Rules":{"shape":"Rules"},
         "VisibilityConfig":{"shape":"VisibilityConfig"},
+        "DataProtectionConfig":{"shape":"DataProtectionConfig"},
         "LockToken":{"shape":"LockToken"},
         "CustomResponseBodies":{"shape":"CustomResponseBodies"},
         "CaptchaConfig":{"shape":"CaptchaConfig"},
@@ -4214,7 +4350,8 @@
     "WAFLimitsExceededException":{
       "type":"structure",
       "members":{
-        "Message":{"shape":"ErrorMessage"}
+        "Message":{"shape":"ErrorMessage"},
+        "SourceType":{"shape":"SourceType"}
       },
       "exception":true
     },
@@ -4299,6 +4436,7 @@
         "Description":{"shape":"EntityDescription"},
         "Rules":{"shape":"Rules"},
         "VisibilityConfig":{"shape":"VisibilityConfig"},
+        "DataProtectionConfig":{"shape":"DataProtectionConfig"},
         "Capacity":{"shape":"ConsumedCapacity"},
         "PreProcessFirewallManagerRuleGroups":{"shape":"FirewallManagerRuleGroups"},
         "PostProcessFirewallManagerRuleGroups":{"shape":"FirewallManagerRuleGroups"},
@@ -4308,7 +4446,8 @@
         "CaptchaConfig":{"shape":"CaptchaConfig"},
         "ChallengeConfig":{"shape":"ChallengeConfig"},
         "TokenDomains":{"shape":"TokenDomains"},
-        "AssociationConfig":{"shape":"AssociationConfig"}
+        "AssociationConfig":{"shape":"AssociationConfig"},
+        "RetrofittedByFirewallManager":{"shape":"Boolean"}
       }
     },
     "WebACLSummaries":{

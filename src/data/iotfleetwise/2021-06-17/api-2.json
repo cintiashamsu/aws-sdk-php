@@ -2,9 +2,11 @@
   "version":"2.0",
   "metadata":{
     "apiVersion":"2021-06-17",
+    "auth":["aws.auth#sigv4"],
     "endpointPrefix":"iotfleetwise",
     "jsonVersion":"1.0",
     "protocol":"json",
+    "protocols":["json"],
     "serviceFullName":"AWS IoT FleetWise",
     "serviceId":"IoTFleetWise",
     "signatureVersion":"v4",
@@ -24,6 +26,7 @@
       "errors":[
         {"shape":"InternalServerException"},
         {"shape":"ResourceNotFoundException"},
+        {"shape":"LimitExceededException"},
         {"shape":"ThrottlingException"},
         {"shape":"ValidationException"},
         {"shape":"AccessDeniedException"}
@@ -55,6 +58,7 @@
       "output":{"shape":"BatchUpdateVehicleResponse"},
       "errors":[
         {"shape":"InternalServerException"},
+        {"shape":"LimitExceededException"},
         {"shape":"ThrottlingException"},
         {"shape":"ValidationException"},
         {"shape":"AccessDeniedException"}
@@ -151,6 +155,26 @@
         {"shape":"ConflictException"},
         {"shape":"LimitExceededException"},
         {"shape":"InvalidNodeException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"ValidationException"},
+        {"shape":"InvalidSignalsException"},
+        {"shape":"AccessDeniedException"}
+      ],
+      "idempotent":true
+    },
+    "CreateStateTemplate":{
+      "name":"CreateStateTemplate",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"CreateStateTemplateRequest"},
+      "output":{"shape":"CreateStateTemplateResponse"},
+      "errors":[
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"InternalServerException"},
+        {"shape":"ConflictException"},
+        {"shape":"LimitExceededException"},
         {"shape":"ThrottlingException"},
         {"shape":"ValidationException"},
         {"shape":"InvalidSignalsException"},
@@ -261,6 +285,22 @@
       ],
       "idempotent":true
     },
+    "DeleteStateTemplate":{
+      "name":"DeleteStateTemplate",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeleteStateTemplateRequest"},
+      "output":{"shape":"DeleteStateTemplateResponse"},
+      "errors":[
+        {"shape":"InternalServerException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"ValidationException"},
+        {"shape":"AccessDeniedException"}
+      ],
+      "idempotent":true
+    },
     "DeleteVehicle":{
       "name":"DeleteVehicle",
       "http":{
@@ -317,6 +357,22 @@
       },
       "input":{"shape":"GetDecoderManifestRequest"},
       "output":{"shape":"GetDecoderManifestResponse"},
+      "errors":[
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"InternalServerException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"ValidationException"},
+        {"shape":"AccessDeniedException"}
+      ]
+    },
+    "GetEncryptionConfiguration":{
+      "name":"GetEncryptionConfiguration",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"GetEncryptionConfigurationRequest"},
+      "output":{"shape":"GetEncryptionConfigurationResponse"},
       "errors":[
         {"shape":"ResourceNotFoundException"},
         {"shape":"InternalServerException"},
@@ -395,6 +451,22 @@
       },
       "input":{"shape":"GetSignalCatalogRequest"},
       "output":{"shape":"GetSignalCatalogResponse"},
+      "errors":[
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"InternalServerException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"ValidationException"},
+        {"shape":"AccessDeniedException"}
+      ]
+    },
+    "GetStateTemplate":{
+      "name":"GetStateTemplate",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"GetStateTemplateRequest"},
+      "output":{"shape":"GetStateTemplateResponse"},
       "errors":[
         {"shape":"ResourceNotFoundException"},
         {"shape":"InternalServerException"},
@@ -632,6 +704,21 @@
         {"shape":"AccessDeniedException"}
       ]
     },
+    "ListStateTemplates":{
+      "name":"ListStateTemplates",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListStateTemplatesRequest"},
+      "output":{"shape":"ListStateTemplatesResponse"},
+      "errors":[
+        {"shape":"InternalServerException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"ValidationException"},
+        {"shape":"AccessDeniedException"}
+      ]
+    },
     "ListTagsForResource":{
       "name":"ListTagsForResource",
       "http":{
@@ -674,6 +761,23 @@
       "errors":[
         {"shape":"InternalServerException"},
         {"shape":"ResourceNotFoundException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"ValidationException"},
+        {"shape":"AccessDeniedException"}
+      ]
+    },
+    "PutEncryptionConfiguration":{
+      "name":"PutEncryptionConfiguration",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"PutEncryptionConfigurationRequest"},
+      "output":{"shape":"PutEncryptionConfigurationResponse"},
+      "errors":[
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"InternalServerException"},
+        {"shape":"ConflictException"},
         {"shape":"ThrottlingException"},
         {"shape":"ValidationException"},
         {"shape":"AccessDeniedException"}
@@ -842,6 +946,25 @@
       ],
       "idempotent":true
     },
+    "UpdateStateTemplate":{
+      "name":"UpdateStateTemplate",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"UpdateStateTemplateRequest"},
+      "output":{"shape":"UpdateStateTemplateResponse"},
+      "errors":[
+        {"shape":"InternalServerException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"ValidationException"},
+        {"shape":"InvalidSignalsException"},
+        {"shape":"AccessDeniedException"}
+      ],
+      "idempotent":true
+    },
     "UpdateVehicle":{
       "name":"UpdateVehicle",
       "http":{
@@ -854,6 +977,7 @@
         {"shape":"InternalServerException"},
         {"shape":"ResourceNotFoundException"},
         {"shape":"ConflictException"},
+        {"shape":"LimitExceededException"},
         {"shape":"ThrottlingException"},
         {"shape":"ValidationException"},
         {"shape":"AccessDeniedException"}
@@ -889,13 +1013,15 @@
           "deprecatedMessage":"assignedValue is no longer in use"
         },
         "deprecationMessage":{"shape":"message"},
-        "comment":{"shape":"message"}
+        "comment":{"shape":"message"},
+        "structFullyQualifiedName":{"shape":"NodePath"}
       }
     },
     "AmazonResourceName":{
       "type":"string",
       "max":1011,
-      "min":1
+      "min":1,
+      "pattern":"arn:.*"
     },
     "AssociateVehicleFleetRequest":{
       "type":"structure",
@@ -991,7 +1117,7 @@
         "lastModificationTime"
       ],
       "members":{
-        "arn":{"shape":"arn"},
+        "arn":{"shape":"campaignArn"},
         "name":{"shape":"campaignName"},
         "description":{"shape":"description"},
         "signalCatalogArn":{"shape":"arn"},
@@ -1040,8 +1166,8 @@
       ],
       "members":{
         "messageId":{"shape":"nonNegativeInteger"},
-        "isBigEndian":{"shape":"boolean"},
-        "isSigned":{"shape":"boolean"},
+        "isBigEndian":{"shape":"PrimitiveBoolean"},
+        "isSigned":{"shape":"PrimitiveBoolean"},
         "startBit":{"shape":"nonNegativeInteger"},
         "offset":{"shape":"double"},
         "factor":{"shape":"double"},
@@ -1093,6 +1219,17 @@
         "conditionLanguageVersion":{"shape":"languageVersion"}
       }
     },
+    "ConditionBasedSignalFetchConfig":{
+      "type":"structure",
+      "required":[
+        "conditionExpression",
+        "triggerMode"
+      ],
+      "members":{
+        "conditionExpression":{"shape":"fetchConfigEventExpression"},
+        "triggerMode":{"shape":"TriggerMode"}
+      }
+    },
     "ConflictException":{
       "type":"structure",
       "required":[
@@ -1126,19 +1263,25 @@
         "diagnosticsMode":{"shape":"DiagnosticsMode"},
         "spoolingMode":{"shape":"SpoolingMode"},
         "compression":{"shape":"Compression"},
-        "priority":{"shape":"priority"},
+        "priority":{
+          "shape":"priority",
+          "deprecated":true,
+          "deprecatedMessage":"priority is no longer used or needed as input"
+        },
         "signalsToCollect":{"shape":"SignalInformationList"},
         "collectionScheme":{"shape":"CollectionScheme"},
         "dataExtraDimensions":{"shape":"DataExtraDimensionNodePathList"},
         "tags":{"shape":"TagList"},
-        "dataDestinationConfigs":{"shape":"DataDestinationConfigs"}
+        "dataDestinationConfigs":{"shape":"DataDestinationConfigs"},
+        "dataPartitions":{"shape":"DataPartitions"},
+        "signalsToFetch":{"shape":"SignalFetchInformationList"}
       }
     },
     "CreateCampaignResponse":{
       "type":"structure",
       "members":{
         "name":{"shape":"campaignName"},
-        "arn":{"shape":"arn"}
+        "arn":{"shape":"campaignArn"}
       }
     },
     "CreateDecoderManifestRequest":{
@@ -1153,6 +1296,7 @@
         "modelManifestArn":{"shape":"arn"},
         "signalDecoders":{"shape":"SignalDecoders"},
         "networkInterfaces":{"shape":"NetworkInterfaces"},
+        "defaultForUnmappedSignals":{"shape":"DefaultForUnmappedSignalsType"},
         "tags":{"shape":"TagList"}
       }
     },
@@ -1238,6 +1382,31 @@
         "arn":{"shape":"arn"}
       }
     },
+    "CreateStateTemplateRequest":{
+      "type":"structure",
+      "required":[
+        "name",
+        "signalCatalogArn",
+        "stateTemplateProperties"
+      ],
+      "members":{
+        "name":{"shape":"resourceName"},
+        "description":{"shape":"description"},
+        "signalCatalogArn":{"shape":"arn"},
+        "stateTemplateProperties":{"shape":"StateTemplateProperties"},
+        "dataExtraDimensions":{"shape":"StateTemplateDataExtraDimensionNodePathList"},
+        "metadataExtraDimensions":{"shape":"StateTemplateMetadataExtraDimensionNodePathList"},
+        "tags":{"shape":"TagList"}
+      }
+    },
+    "CreateStateTemplateResponse":{
+      "type":"structure",
+      "members":{
+        "name":{"shape":"resourceName"},
+        "arn":{"shape":"arn"},
+        "id":{"shape":"ResourceUniqueId"}
+      }
+    },
     "CreateVehicleError":{
       "type":"structure",
       "members":{
@@ -1259,7 +1428,8 @@
         "decoderManifestArn":{"shape":"arn"},
         "attributes":{"shape":"attributesMap"},
         "associationBehavior":{"shape":"VehicleAssociationBehavior"},
-        "tags":{"shape":"TagList"}
+        "tags":{"shape":"TagList"},
+        "stateTemplates":{"shape":"StateTemplateAssociations"}
       }
     },
     "CreateVehicleRequestItem":{
@@ -1275,7 +1445,8 @@
         "decoderManifestArn":{"shape":"arn"},
         "attributes":{"shape":"attributesMap"},
         "associationBehavior":{"shape":"VehicleAssociationBehavior"},
-        "tags":{"shape":"TagList"}
+        "tags":{"shape":"TagList"},
+        "stateTemplates":{"shape":"StateTemplateAssociations"}
       }
     },
     "CreateVehicleResponse":{
@@ -1294,11 +1465,64 @@
         "thingArn":{"shape":"arn"}
       }
     },
+    "CustomDecodingId":{
+      "type":"string",
+      "max":150,
+      "min":1,
+      "pattern":"(?!.*\\.\\.)[a-zA-Z0-9_\\-#:.]+"
+    },
+    "CustomDecodingInterface":{
+      "type":"structure",
+      "required":["name"],
+      "members":{
+        "name":{"shape":"CustomDecodingSignalInterfaceName"}
+      }
+    },
+    "CustomDecodingSignal":{
+      "type":"structure",
+      "required":["id"],
+      "members":{
+        "id":{"shape":"CustomDecodingId"}
+      }
+    },
+    "CustomDecodingSignalInterfaceName":{
+      "type":"string",
+      "max":100,
+      "min":1,
+      "pattern":"[a-zA-Z\\d\\-_:]+"
+    },
+    "CustomProperty":{
+      "type":"structure",
+      "required":[
+        "fullyQualifiedName",
+        "dataType"
+      ],
+      "members":{
+        "fullyQualifiedName":{"shape":"string"},
+        "dataType":{"shape":"NodeDataType"},
+        "dataEncoding":{"shape":"NodeDataEncoding"},
+        "description":{"shape":"description"},
+        "deprecationMessage":{"shape":"message"},
+        "comment":{"shape":"message"},
+        "structFullyQualifiedName":{"shape":"NodePath"}
+      }
+    },
+    "CustomStruct":{
+      "type":"structure",
+      "required":["fullyQualifiedName"],
+      "members":{
+        "fullyQualifiedName":{"shape":"string"},
+        "description":{"shape":"description"},
+        "deprecationMessage":{"shape":"message"},
+        "comment":{"shape":"message"}
+      }
+    },
     "DataDestinationConfig":{
       "type":"structure",
       "members":{
         "s3Config":{"shape":"S3Config"},
-        "timestreamConfig":{"shape":"TimestreamConfig"}
+        "timestreamConfig":{"shape":"TimestreamConfig"},
+        "mqttTopicConfig":{"shape":"MqttTopicConfig"}
       },
       "union":true
     },
@@ -1312,7 +1536,8 @@
       "type":"list",
       "member":{"shape":"NodePath"},
       "max":5,
-      "min":0
+      "min":0,
+      "sensitive":true
     },
     "DataFormat":{
       "type":"string",
@@ -1320,6 +1545,51 @@
         "JSON",
         "PARQUET"
       ]
+    },
+    "DataPartition":{
+      "type":"structure",
+      "required":[
+        "id",
+        "storageOptions"
+      ],
+      "members":{
+        "id":{"shape":"DataPartitionId"},
+        "storageOptions":{"shape":"DataPartitionStorageOptions"},
+        "uploadOptions":{"shape":"DataPartitionUploadOptions"}
+      }
+    },
+    "DataPartitionId":{
+      "type":"string",
+      "max":128,
+      "min":1,
+      "pattern":"[a-zA-Z0-9]+"
+    },
+    "DataPartitionStorageOptions":{
+      "type":"structure",
+      "required":[
+        "maximumSize",
+        "storageLocation",
+        "minimumTimeToLive"
+      ],
+      "members":{
+        "maximumSize":{"shape":"StorageMaximumSize"},
+        "storageLocation":{"shape":"StorageLocation"},
+        "minimumTimeToLive":{"shape":"StorageMinimumTimeToLive"}
+      }
+    },
+    "DataPartitionUploadOptions":{
+      "type":"structure",
+      "required":["expression"],
+      "members":{
+        "expression":{"shape":"eventExpression"},
+        "conditionLanguageVersion":{"shape":"languageVersion"}
+      }
+    },
+    "DataPartitions":{
+      "type":"list",
+      "member":{"shape":"DataPartition"},
+      "max":20,
+      "min":1
     },
     "DecoderManifestSummary":{
       "type":"structure",
@@ -1334,7 +1604,8 @@
         "description":{"shape":"description"},
         "status":{"shape":"ManifestStatus"},
         "creationTime":{"shape":"timestamp"},
-        "lastModificationTime":{"shape":"timestamp"}
+        "lastModificationTime":{"shape":"timestamp"},
+        "message":{"shape":"message"}
       }
     },
     "DecoderManifestValidationException":{
@@ -1345,6 +1616,10 @@
         "message":{"shape":"string"}
       },
       "exception":true
+    },
+    "DefaultForUnmappedSignalsType":{
+      "type":"string",
+      "enum":["CUSTOM_DECODING"]
     },
     "DeleteCampaignRequest":{
       "type":"structure",
@@ -1357,7 +1632,7 @@
       "type":"structure",
       "members":{
         "name":{"shape":"campaignName"},
-        "arn":{"shape":"arn"}
+        "arn":{"shape":"campaignArn"}
       }
     },
     "DeleteDecoderManifestRequest":{
@@ -1428,6 +1703,21 @@
         "arn":{"shape":"arn"}
       }
     },
+    "DeleteStateTemplateRequest":{
+      "type":"structure",
+      "required":["identifier"],
+      "members":{
+        "identifier":{"shape":"ResourceIdentifier"}
+      }
+    },
+    "DeleteStateTemplateResponse":{
+      "type":"structure",
+      "members":{
+        "name":{"shape":"resourceName"},
+        "arn":{"shape":"arn"},
+        "id":{"shape":"ResourceUniqueId"}
+      }
+    },
     "DeleteVehicleRequest":{
       "type":"structure",
       "required":["vehicleName"],
@@ -1468,6 +1758,27 @@
       "type":"structure",
       "members":{
       }
+    },
+    "EncryptionStatus":{
+      "type":"string",
+      "enum":[
+        "PENDING",
+        "SUCCESS",
+        "FAILURE"
+      ]
+    },
+    "EncryptionType":{
+      "type":"string",
+      "enum":[
+        "KMS_BASED_ENCRYPTION",
+        "FLEETWISE_DEFAULT_ENCRYPTION"
+      ]
+    },
+    "EventExpressionList":{
+      "type":"list",
+      "member":{"shape":"actionEventExpression"},
+      "max":2,
+      "min":1
     },
     "FleetSummary":{
       "type":"structure",
@@ -1515,7 +1826,7 @@
       "type":"structure",
       "members":{
         "name":{"shape":"campaignName"},
-        "arn":{"shape":"arn"},
+        "arn":{"shape":"campaignArn"},
         "description":{"shape":"description"},
         "signalCatalogArn":{"shape":"arn"},
         "targetArn":{"shape":"arn"},
@@ -1532,7 +1843,9 @@
         "dataExtraDimensions":{"shape":"DataExtraDimensionNodePathList"},
         "creationTime":{"shape":"timestamp"},
         "lastModificationTime":{"shape":"timestamp"},
-        "dataDestinationConfigs":{"shape":"DataDestinationConfigs"}
+        "dataDestinationConfigs":{"shape":"DataDestinationConfigs"},
+        "dataPartitions":{"shape":"DataPartitions"},
+        "signalsToFetch":{"shape":"SignalFetchInformationList"}
       }
     },
     "GetDecoderManifestRequest":{
@@ -1556,6 +1869,27 @@
         "description":{"shape":"description"},
         "modelManifestArn":{"shape":"arn"},
         "status":{"shape":"ManifestStatus"},
+        "creationTime":{"shape":"timestamp"},
+        "lastModificationTime":{"shape":"timestamp"},
+        "message":{"shape":"message"}
+      }
+    },
+    "GetEncryptionConfigurationRequest":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "GetEncryptionConfigurationResponse":{
+      "type":"structure",
+      "required":[
+        "encryptionStatus",
+        "encryptionType"
+      ],
+      "members":{
+        "kmsKeyId":{"shape":"String"},
+        "encryptionStatus":{"shape":"EncryptionStatus"},
+        "encryptionType":{"shape":"EncryptionType"},
+        "errorMessage":{"shape":"errorMessage"},
         "creationTime":{"shape":"timestamp"},
         "lastModificationTime":{"shape":"timestamp"}
       }
@@ -1669,6 +2003,28 @@
         "lastModificationTime":{"shape":"timestamp"}
       }
     },
+    "GetStateTemplateRequest":{
+      "type":"structure",
+      "required":["identifier"],
+      "members":{
+        "identifier":{"shape":"ResourceIdentifier"}
+      }
+    },
+    "GetStateTemplateResponse":{
+      "type":"structure",
+      "members":{
+        "name":{"shape":"resourceName"},
+        "arn":{"shape":"arn"},
+        "description":{"shape":"description"},
+        "signalCatalogArn":{"shape":"arn"},
+        "stateTemplateProperties":{"shape":"StateTemplateProperties"},
+        "dataExtraDimensions":{"shape":"StateTemplateDataExtraDimensionNodePathList"},
+        "metadataExtraDimensions":{"shape":"StateTemplateMetadataExtraDimensionNodePathList"},
+        "creationTime":{"shape":"timestamp"},
+        "lastModificationTime":{"shape":"timestamp"},
+        "id":{"shape":"ResourceUniqueId"}
+      }
+    },
     "GetVehicleRequest":{
       "type":"structure",
       "required":["vehicleName"],
@@ -1684,6 +2040,7 @@
         "modelManifestArn":{"shape":"arn"},
         "decoderManifestArn":{"shape":"arn"},
         "attributes":{"shape":"attributesMap"},
+        "stateTemplates":{"shape":"StateTemplateAssociations"},
         "creationTime":{"shape":"timestamp"},
         "lastModificationTime":{"shape":"timestamp"}
       }
@@ -1824,7 +2181,8 @@
       "type":"structure",
       "members":{
         "name":{"shape":"FullyQualifiedName"},
-        "reason":{"shape":"SignalDecoderFailureReason"}
+        "reason":{"shape":"SignalDecoderFailureReason"},
+        "hint":{"shape":"message"}
       }
     },
     "InvalidSignalDecoders":{
@@ -1862,7 +2220,7 @@
       "members":{
         "nextToken":{"shape":"nextToken"},
         "maxResults":{"shape":"maxResults"},
-        "status":{"shape":"status"}
+        "status":{"shape":"statusStr"}
       }
     },
     "ListCampaignsResponse":{
@@ -1986,7 +2344,8 @@
       "members":{
         "name":{"shape":"resourceName"},
         "nextToken":{"shape":"nextToken"},
-        "maxResults":{"shape":"maxResults"}
+        "maxResults":{"shape":"maxResults"},
+        "signalNodeType":{"shape":"SignalNodeType"}
       }
     },
     "ListSignalCatalogNodesResponse":{
@@ -2007,6 +2366,20 @@
       "type":"structure",
       "members":{
         "summaries":{"shape":"signalCatalogSummaries"},
+        "nextToken":{"shape":"nextToken"}
+      }
+    },
+    "ListStateTemplatesRequest":{
+      "type":"structure",
+      "members":{
+        "nextToken":{"shape":"nextToken"},
+        "maxResults":{"shape":"maxResults"}
+      }
+    },
+    "ListStateTemplatesResponse":{
+      "type":"structure",
+      "members":{
+        "summaries":{"shape":"StateTemplateSummaries"},
         "nextToken":{"shape":"nextToken"}
       }
     },
@@ -2043,6 +2416,8 @@
       "type":"structure",
       "members":{
         "modelManifestArn":{"shape":"arn"},
+        "attributeNames":{"shape":"attributeNamesList"},
+        "attributeValues":{"shape":"attributeValuesList"},
         "nextToken":{"shape":"nextToken"},
         "maxResults":{"shape":"listVehiclesMaxResults"}
       }
@@ -2065,8 +2440,21 @@
       "type":"string",
       "enum":[
         "ACTIVE",
-        "DRAFT"
+        "DRAFT",
+        "INVALID",
+        "VALIDATING"
       ]
+    },
+    "MessageSignal":{
+      "type":"structure",
+      "required":[
+        "topicName",
+        "structuredMessage"
+      ],
+      "members":{
+        "topicName":{"shape":"TopicName"},
+        "structuredMessage":{"shape":"StructuredMessage"}
+      }
     },
     "ModelManifestSummary":{
       "type":"structure",
@@ -2089,7 +2477,28 @@
       "key":{"shape":"string"},
       "value":{"shape":"string"}
     },
-    "NetworkFileBlob":{"type":"blob"},
+    "MqttTopicArn":{
+      "type":"string",
+      "max":2048,
+      "min":20,
+      "pattern":"arn:.*"
+    },
+    "MqttTopicConfig":{
+      "type":"structure",
+      "required":[
+        "mqttTopicArn",
+        "executionRoleArn"
+      ],
+      "members":{
+        "mqttTopicArn":{"shape":"MqttTopicArn"},
+        "executionRoleArn":{"shape":"IAMRoleArn"}
+      }
+    },
+    "NetworkFileBlob":{
+      "type":"blob",
+      "max":200000000,
+      "min":0
+    },
     "NetworkFileDefinition":{
       "type":"structure",
       "members":{
@@ -2117,7 +2526,9 @@
         "interfaceId":{"shape":"InterfaceId"},
         "type":{"shape":"NetworkInterfaceType"},
         "canInterface":{"shape":"CanInterface"},
-        "obdInterface":{"shape":"ObdInterface"}
+        "obdInterface":{"shape":"ObdInterface"},
+        "vehicleMiddleware":{"shape":"VehicleMiddleware"},
+        "customDecodingInterface":{"shape":"CustomDecodingInterface"}
       }
     },
     "NetworkInterfaceFailureReason":{
@@ -2128,14 +2539,18 @@
         "NETWORK_INTERFACE_TO_ADD_ALREADY_EXISTS",
         "CAN_NETWORK_INTERFACE_INFO_IS_NULL",
         "OBD_NETWORK_INTERFACE_INFO_IS_NULL",
-        "NETWORK_INTERFACE_TO_REMOVE_ASSOCIATED_WITH_SIGNALS"
+        "NETWORK_INTERFACE_TO_REMOVE_ASSOCIATED_WITH_SIGNALS",
+        "VEHICLE_MIDDLEWARE_NETWORK_INTERFACE_INFO_IS_NULL",
+        "CUSTOM_DECODING_SIGNAL_NETWORK_INTERFACE_INFO_IS_NULL"
       ]
     },
     "NetworkInterfaceType":{
       "type":"string",
       "enum":[
         "CAN_INTERFACE",
-        "OBD_INTERFACE"
+        "OBD_INTERFACE",
+        "VEHICLE_MIDDLEWARE",
+        "CUSTOM_DECODING_INTERFACE"
       ]
     },
     "NetworkInterfaces":{
@@ -2150,7 +2565,9 @@
         "branch":{"shape":"Branch"},
         "sensor":{"shape":"Sensor"},
         "actuator":{"shape":"Actuator"},
-        "attribute":{"shape":"Attribute"}
+        "attribute":{"shape":"Attribute"},
+        "struct":{"shape":"CustomStruct"},
+        "property":{"shape":"CustomProperty"}
       },
       "union":true
     },
@@ -2161,8 +2578,17 @@
         "totalBranches":{"shape":"number"},
         "totalSensors":{"shape":"number"},
         "totalAttributes":{"shape":"number"},
-        "totalActuators":{"shape":"number"}
+        "totalActuators":{"shape":"number"},
+        "totalStructs":{"shape":"number"},
+        "totalProperties":{"shape":"number"}
       }
+    },
+    "NodeDataEncoding":{
+      "type":"string",
+      "enum":[
+        "BINARY",
+        "TYPED"
+      ]
     },
     "NodeDataType":{
       "type":"string",
@@ -2193,7 +2619,9 @@
         "DOUBLE_ARRAY",
         "STRING_ARRAY",
         "UNIX_TIMESTAMP_ARRAY",
-        "UNKNOWN"
+        "UNKNOWN",
+        "STRUCT",
+        "STRUCT_ARRAY"
       ]
     },
     "NodePath":{
@@ -2238,8 +2666,8 @@
         "obdStandard":{"shape":"ObdStandard"},
         "pidRequestIntervalSeconds":{"shape":"nonNegativeInteger"},
         "dtcRequestIntervalSeconds":{"shape":"nonNegativeInteger"},
-        "useExtendedIds":{"shape":"boolean"},
-        "hasTransmissionEcu":{"shape":"boolean"}
+        "useExtendedIds":{"shape":"PrimitiveBoolean"},
+        "hasTransmissionEcu":{"shape":"PrimitiveBoolean"}
       }
     },
     "ObdInterfaceName":{
@@ -2275,11 +2703,31 @@
       "max":50,
       "min":1
     },
+    "OnChangeStateTemplateUpdateStrategy":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "PeriodicStateTemplateUpdateStrategy":{
+      "type":"structure",
+      "required":["stateTemplateUpdateRate"],
+      "members":{
+        "stateTemplateUpdateRate":{"shape":"TimePeriod"}
+      }
+    },
     "Prefix":{
       "type":"string",
       "max":512,
       "min":1,
       "pattern":"[a-zA-Z0-9-_:./!*'()]+"
+    },
+    "PrimitiveBoolean":{"type":"boolean"},
+    "PrimitiveMessageDefinition":{
+      "type":"structure",
+      "members":{
+        "ros2PrimitiveMessageDefinition":{"shape":"ROS2PrimitiveMessageDefinition"}
+      },
+      "union":true
     },
     "ProtocolName":{
       "type":"string",
@@ -2290,6 +2738,31 @@
       "type":"string",
       "max":50,
       "min":1
+    },
+    "PutEncryptionConfigurationRequest":{
+      "type":"structure",
+      "required":["encryptionType"],
+      "members":{
+        "kmsKeyId":{"shape":"PutEncryptionConfigurationRequestKmsKeyIdString"},
+        "encryptionType":{"shape":"EncryptionType"}
+      }
+    },
+    "PutEncryptionConfigurationRequestKmsKeyIdString":{
+      "type":"string",
+      "max":2048,
+      "min":0
+    },
+    "PutEncryptionConfigurationResponse":{
+      "type":"structure",
+      "required":[
+        "encryptionStatus",
+        "encryptionType"
+      ],
+      "members":{
+        "kmsKeyId":{"shape":"String"},
+        "encryptionStatus":{"shape":"EncryptionStatus"},
+        "encryptionType":{"shape":"EncryptionType"}
+      }
     },
     "PutLoggingOptionsRequest":{
       "type":"structure",
@@ -2302,6 +2775,42 @@
       "type":"structure",
       "members":{
       }
+    },
+    "ROS2PrimitiveMessageDefinition":{
+      "type":"structure",
+      "required":["primitiveType"],
+      "members":{
+        "primitiveType":{"shape":"ROS2PrimitiveType"},
+        "offset":{"shape":"double"},
+        "scaling":{"shape":"double"},
+        "upperBound":{"shape":"ROS2PrimitiveMessageDefinitionUpperBoundLong"}
+      }
+    },
+    "ROS2PrimitiveMessageDefinitionUpperBoundLong":{
+      "type":"long",
+      "box":true,
+      "max":2048,
+      "min":0
+    },
+    "ROS2PrimitiveType":{
+      "type":"string",
+      "enum":[
+        "BOOL",
+        "BYTE",
+        "CHAR",
+        "FLOAT32",
+        "FLOAT64",
+        "INT8",
+        "UINT8",
+        "INT16",
+        "UINT16",
+        "INT32",
+        "UINT32",
+        "INT64",
+        "UINT64",
+        "STRING",
+        "WSTRING"
+      ]
     },
     "RegisterAccountRequest":{
       "type":"structure",
@@ -2342,6 +2851,12 @@
         "REGISTRATION_FAILURE"
       ]
     },
+    "ResourceIdentifier":{
+      "type":"string",
+      "max":100,
+      "min":1,
+      "pattern":"[a-zA-Z\\d\\-_:]+"
+    },
     "ResourceNotFoundException":{
       "type":"structure",
       "required":[
@@ -2355,6 +2870,12 @@
         "resourceType":{"shape":"string"}
       },
       "exception":true
+    },
+    "ResourceUniqueId":{
+      "type":"string",
+      "max":26,
+      "min":26,
+      "pattern":"[A-Z0-9]+"
     },
     "RetryAfterSeconds":{"type":"integer"},
     "S3BucketArn":{
@@ -2388,7 +2909,8 @@
         "min":{"shape":"double"},
         "max":{"shape":"double"},
         "deprecationMessage":{"shape":"message"},
-        "comment":{"shape":"message"}
+        "comment":{"shape":"message"},
+        "structFullyQualifiedName":{"shape":"NodePath"}
       }
     },
     "SignalCatalogSummary":{
@@ -2412,7 +2934,9 @@
         "type":{"shape":"SignalDecoderType"},
         "interfaceId":{"shape":"InterfaceId"},
         "canSignal":{"shape":"CanSignal"},
-        "obdSignal":{"shape":"ObdSignal"}
+        "obdSignal":{"shape":"ObdSignal"},
+        "messageSignal":{"shape":"MessageSignal"},
+        "customDecodingSignal":{"shape":"CustomDecodingSignal"}
       }
     },
     "SignalDecoderFailureReason":{
@@ -2426,14 +2950,23 @@
         "SIGNAL_NOT_IN_MODEL",
         "CAN_SIGNAL_INFO_IS_NULL",
         "OBD_SIGNAL_INFO_IS_NULL",
-        "NO_DECODER_INFO_FOR_SIGNAL_IN_MODEL"
+        "NO_DECODER_INFO_FOR_SIGNAL_IN_MODEL",
+        "MESSAGE_SIGNAL_INFO_IS_NULL",
+        "SIGNAL_DECODER_TYPE_INCOMPATIBLE_WITH_MESSAGE_SIGNAL_TYPE",
+        "STRUCT_SIZE_MISMATCH",
+        "NO_SIGNAL_IN_CATALOG_FOR_DECODER_SIGNAL",
+        "SIGNAL_DECODER_INCOMPATIBLE_WITH_SIGNAL_CATALOG",
+        "EMPTY_MESSAGE_SIGNAL",
+        "CUSTOM_DECODING_SIGNAL_INFO_IS_NULL"
       ]
     },
     "SignalDecoderType":{
       "type":"string",
       "enum":[
         "CAN_SIGNAL",
-        "OBD_SIGNAL"
+        "OBD_SIGNAL",
+        "MESSAGE_SIGNAL",
+        "CUSTOM_DECODING_SIGNAL"
       ]
     },
     "SignalDecoders":{
@@ -2442,20 +2975,61 @@
       "max":500,
       "min":1
     },
+    "SignalFetchConfig":{
+      "type":"structure",
+      "members":{
+        "timeBased":{"shape":"TimeBasedSignalFetchConfig"},
+        "conditionBased":{"shape":"ConditionBasedSignalFetchConfig"}
+      },
+      "union":true
+    },
+    "SignalFetchInformation":{
+      "type":"structure",
+      "required":[
+        "fullyQualifiedName",
+        "signalFetchConfig",
+        "actions"
+      ],
+      "members":{
+        "fullyQualifiedName":{"shape":"NodePath"},
+        "signalFetchConfig":{"shape":"SignalFetchConfig"},
+        "conditionLanguageVersion":{"shape":"languageVersion"},
+        "actions":{"shape":"EventExpressionList"}
+      }
+    },
+    "SignalFetchInformationList":{
+      "type":"list",
+      "member":{"shape":"SignalFetchInformation"},
+      "max":2,
+      "min":1
+    },
     "SignalInformation":{
       "type":"structure",
       "required":["name"],
       "members":{
         "name":{"shape":"wildcardSignalName"},
         "maxSampleCount":{"shape":"maxSampleCount"},
-        "minimumSamplingIntervalMs":{"shape":"uint32"}
+        "minimumSamplingIntervalMs":{"shape":"uint32"},
+        "dataPartitionId":{"shape":"DataPartitionId"}
       }
     },
     "SignalInformationList":{
       "type":"list",
       "member":{"shape":"SignalInformation"},
       "max":1000,
-      "min":0
+      "min":0,
+      "sensitive":true
+    },
+    "SignalNodeType":{
+      "type":"string",
+      "enum":[
+        "SENSOR",
+        "ACTUATOR",
+        "ATTRIBUTE",
+        "BRANCH",
+        "CUSTOM_STRUCT",
+        "CUSTOM_PROPERTY"
+      ]
     },
     "SpoolingMode":{
       "type":"string",
@@ -2464,6 +3038,71 @@
         "TO_DISK"
       ]
     },
+    "StateTemplateAssociation":{
+      "type":"structure",
+      "required":[
+        "identifier",
+        "stateTemplateUpdateStrategy"
+      ],
+      "members":{
+        "identifier":{"shape":"ResourceIdentifier"},
+        "stateTemplateUpdateStrategy":{"shape":"StateTemplateUpdateStrategy"}
+      }
+    },
+    "StateTemplateAssociationIdentifiers":{
+      "type":"list",
+      "member":{"shape":"ResourceIdentifier"},
+      "max":20,
+      "min":1
+    },
+    "StateTemplateAssociations":{
+      "type":"list",
+      "member":{"shape":"StateTemplateAssociation"},
+      "max":20,
+      "min":1
+    },
+    "StateTemplateDataExtraDimensionNodePathList":{
+      "type":"list",
+      "member":{"shape":"NodePath"},
+      "max":5,
+      "min":0
+    },
+    "StateTemplateMetadataExtraDimensionNodePathList":{
+      "type":"list",
+      "member":{"shape":"NodePath"},
+      "max":5,
+      "min":0
+    },
+    "StateTemplateProperties":{
+      "type":"list",
+      "member":{"shape":"NodePath"},
+      "max":500,
+      "min":1
+    },
+    "StateTemplateSummaries":{
+      "type":"list",
+      "member":{"shape":"StateTemplateSummary"}
+    },
+    "StateTemplateSummary":{
+      "type":"structure",
+      "members":{
+        "name":{"shape":"resourceName"},
+        "arn":{"shape":"arn"},
+        "signalCatalogArn":{"shape":"arn"},
+        "description":{"shape":"description"},
+        "creationTime":{"shape":"timestamp"},
+        "lastModificationTime":{"shape":"timestamp"},
+        "id":{"shape":"ResourceUniqueId"}
+      }
+    },
+    "StateTemplateUpdateStrategy":{
+      "type":"structure",
+      "members":{
+        "periodic":{"shape":"PeriodicStateTemplateUpdateStrategy"},
+        "onChange":{"shape":"OnChangeStateTemplateUpdateStrategy"}
+      },
+      "union":true
+    },
     "StorageCompressionFormat":{
       "type":"string",
       "enum":[
@@ -2471,7 +3110,116 @@
         "GZIP"
       ]
     },
+    "StorageLocation":{
+      "type":"string",
+      "max":4096,
+      "min":1,
+      "sensitive":true
+    },
+    "StorageMaximumSize":{
+      "type":"structure",
+      "required":[
+        "unit",
+        "value"
+      ],
+      "members":{
+        "unit":{"shape":"StorageMaximumSizeUnit"},
+        "value":{"shape":"StorageMaximumSizeValue"}
+      }
+    },
+    "StorageMaximumSizeUnit":{
+      "type":"string",
+      "enum":[
+        "MB",
+        "GB",
+        "TB"
+      ]
+    },
+    "StorageMaximumSizeValue":{
+      "type":"integer",
+      "box":true,
+      "max":1073741824,
+      "min":1
+    },
+    "StorageMinimumTimeToLive":{
+      "type":"structure",
+      "required":[
+        "unit",
+        "value"
+      ],
+      "members":{
+        "unit":{"shape":"StorageMinimumTimeToLiveUnit"},
+        "value":{"shape":"StorageMinimumTimeToLiveValue"}
+      }
+    },
+    "StorageMinimumTimeToLiveUnit":{
+      "type":"string",
+      "enum":[
+        "HOURS",
+        "DAYS",
+        "WEEKS"
+      ]
+    },
+    "StorageMinimumTimeToLiveValue":{
+      "type":"integer",
+      "box":true,
+      "max":876600,
+      "min":1
+    },
     "String":{"type":"string"},
+    "StructureMessageName":{
+      "type":"string",
+      "max":150,
+      "min":1
+    },
+    "StructuredMessage":{
+      "type":"structure",
+      "members":{
+        "primitiveMessageDefinition":{"shape":"PrimitiveMessageDefinition"},
+        "structuredMessageListDefinition":{"shape":"StructuredMessageListDefinition"},
+        "structuredMessageDefinition":{"shape":"StructuredMessageDefinition"}
+      },
+      "union":true
+    },
+    "StructuredMessageDefinition":{
+      "type":"list",
+      "member":{"shape":"StructuredMessageFieldNameAndDataTypePair"},
+      "max":500,
+      "min":1
+    },
+    "StructuredMessageFieldNameAndDataTypePair":{
+      "type":"structure",
+      "required":[
+        "fieldName",
+        "dataType"
+      ],
+      "members":{
+        "fieldName":{"shape":"StructureMessageName"},
+        "dataType":{"shape":"StructuredMessage"}
+      }
+    },
+    "StructuredMessageListDefinition":{
+      "type":"structure",
+      "required":[
+        "name",
+        "memberType",
+        "listType"
+      ],
+      "members":{
+        "name":{"shape":"StructureMessageName"},
+        "memberType":{"shape":"StructuredMessage"},
+        "listType":{"shape":"StructuredMessageListType"},
+        "capacity":{"shape":"nonNegativeInteger"}
+      }
+    },
+    "StructuredMessageListType":{
+      "type":"string",
+      "enum":[
+        "FIXED_CAPACITY",
+        "DYNAMIC_UNBOUNDED_CAPACITY",
+        "DYNAMIC_BOUNDED_CAPACITY"
+      ]
+    },
     "Tag":{
       "type":"structure",
       "required":[
@@ -2539,6 +3287,33 @@
         "periodMs":{"shape":"collectionPeriodMs"}
       }
     },
+    "TimeBasedSignalFetchConfig":{
+      "type":"structure",
+      "required":["executionFrequencyMs"],
+      "members":{
+        "executionFrequencyMs":{"shape":"positiveLong"}
+      }
+    },
+    "TimePeriod":{
+      "type":"structure",
+      "required":[
+        "unit",
+        "value"
+      ],
+      "members":{
+        "unit":{"shape":"TimeUnit"},
+        "value":{"shape":"positiveInteger"}
+      }
+    },
+    "TimeUnit":{
+      "type":"string",
+      "enum":[
+        "MILLISECOND",
+        "SECOND",
+        "MINUTE",
+        "HOUR"
+      ]
+    },
     "TimestreamConfig":{
       "type":"structure",
       "required":[
@@ -2595,6 +3370,12 @@
       "min":3,
       "pattern":"[a-zA-Z0-9_.-]+"
     },
+    "TopicName":{
+      "type":"string",
+      "max":150,
+      "min":1,
+      "pattern":"[a-zA-Z0-9_\\-#:./]+"
+    },
     "TriggerMode":{
       "type":"string",
       "enum":[
@@ -2643,7 +3424,7 @@
     "UpdateCampaignResponse":{
       "type":"structure",
       "members":{
-        "arn":{"shape":"arn"},
+        "arn":{"shape":"campaignArn"},
         "name":{"shape":"campaignName"},
         "status":{"shape":"CampaignStatus"}
       }
@@ -2660,7 +3441,8 @@
         "networkInterfacesToAdd":{"shape":"NetworkInterfaces"},
         "networkInterfacesToUpdate":{"shape":"NetworkInterfaces"},
         "networkInterfacesToRemove":{"shape":"InterfaceIds"},
-        "status":{"shape":"ManifestStatus"}
+        "status":{"shape":"ManifestStatus"},
+        "defaultForUnmappedSignals":{"shape":"DefaultForUnmappedSignalsType"}
       }
     },
     "UpdateDecoderManifestResponse":{
@@ -2740,6 +3522,26 @@
         "arn":{"shape":"arn"}
       }
     },
+    "UpdateStateTemplateRequest":{
+      "type":"structure",
+      "required":["identifier"],
+      "members":{
+        "identifier":{"shape":"ResourceIdentifier"},
+        "description":{"shape":"description"},
+        "stateTemplatePropertiesToAdd":{"shape":"StateTemplateProperties"},
+        "stateTemplatePropertiesToRemove":{"shape":"StateTemplateProperties"},
+        "dataExtraDimensions":{"shape":"StateTemplateDataExtraDimensionNodePathList"},
+        "metadataExtraDimensions":{"shape":"StateTemplateMetadataExtraDimensionNodePathList"}
+      }
+    },
+    "UpdateStateTemplateResponse":{
+      "type":"structure",
+      "members":{
+        "name":{"shape":"resourceName"},
+        "arn":{"shape":"arn"},
+        "id":{"shape":"ResourceUniqueId"}
+      }
+    },
     "UpdateVehicleError":{
       "type":"structure",
       "members":{
@@ -2756,7 +3558,9 @@
         "modelManifestArn":{"shape":"arn"},
         "decoderManifestArn":{"shape":"arn"},
         "attributes":{"shape":"attributesMap"},
-        "attributeUpdateMode":{"shape":"UpdateMode"}
+        "attributeUpdateMode":{"shape":"UpdateMode"},
+        "stateTemplatesToAdd":{"shape":"StateTemplateAssociations"},
+        "stateTemplatesToRemove":{"shape":"StateTemplateAssociationIdentifiers"}
       }
     },
     "UpdateVehicleRequestItem":{
@@ -2767,7 +3571,9 @@
         "modelManifestArn":{"shape":"arn"},
         "decoderManifestArn":{"shape":"arn"},
         "attributes":{"shape":"attributesMap"},
-        "attributeUpdateMode":{"shape":"UpdateMode"}
+        "attributeUpdateMode":{"shape":"UpdateMode"},
+        "stateTemplatesToAdd":{"shape":"StateTemplateAssociations"},
+        "stateTemplatesToRemove":{"shape":"StateTemplateAssociationIdentifiers"}
       }
     },
     "UpdateVehicleResponse":{
@@ -2825,6 +3631,26 @@
         "ValidateIotThingExists"
       ]
     },
+    "VehicleMiddleware":{
+      "type":"structure",
+      "required":[
+        "name",
+        "protocolName"
+      ],
+      "members":{
+        "name":{"shape":"VehicleMiddlewareName"},
+        "protocolName":{"shape":"VehicleMiddlewareProtocol"}
+      }
+    },
+    "VehicleMiddlewareName":{
+      "type":"string",
+      "max":100,
+      "min":1
+    },
+    "VehicleMiddlewareProtocol":{
+      "type":"string",
+      "enum":["ROS_2"]
+    },
     "VehicleState":{
       "type":"string",
       "enum":[
@@ -2838,7 +3664,7 @@
     "VehicleStatus":{
       "type":"structure",
       "members":{
-        "campaignName":{"shape":"string"},
+        "campaignName":{"shape":"campaignName"},
         "vehicleName":{"shape":"vehicleName"},
         "status":{"shape":"VehicleState"}
       }
@@ -2863,8 +3689,15 @@
         "modelManifestArn":{"shape":"arn"},
         "decoderManifestArn":{"shape":"arn"},
         "creationTime":{"shape":"timestamp"},
-        "lastModificationTime":{"shape":"timestamp"}
+        "lastModificationTime":{"shape":"timestamp"},
+        "attributes":{"shape":"attributesMap"}
       }
+    },
+    "actionEventExpression":{
+      "type":"string",
+      "max":100,
+      "min":1,
+      "sensitive":true
     },
     "arn":{"type":"string"},
     "attributeName":{
@@ -2873,13 +3706,28 @@
       "min":1,
       "pattern":"[a-zA-Z0-9_.-]+"
     },
+    "attributeNamesList":{
+      "type":"list",
+      "member":{"shape":"attributeName"},
+      "max":5,
+      "min":1
+    },
     "attributeValue":{"type":"string"},
+    "attributeValuesList":{
+      "type":"list",
+      "member":{"shape":"attributeValue"},
+      "max":5,
+      "min":1
+    },
     "attributesMap":{
       "type":"map",
       "key":{"shape":"attributeName"},
       "value":{"shape":"attributeValue"}
     },
-    "boolean":{"type":"boolean"},
+    "campaignArn":{
+      "type":"string",
+      "pattern":"arn:aws:iotfleetwise:[a-z0-9-]+:[0-9]{12}:campaign/[a-zA-Z\\d\\-_:]{1,100}"
+    },
     "campaignName":{
       "type":"string",
       "max":100,
@@ -2893,7 +3741,7 @@
     "collectionPeriodMs":{
       "type":"long",
       "box":true,
-      "max":60000,
+      "max":86400000,
       "min":10000
     },
     "createVehicleErrors":{
@@ -2903,6 +3751,7 @@
     "createVehicleRequestItems":{
       "type":"list",
       "member":{"shape":"CreateVehicleRequestItem"},
+      "max":10,
       "min":1
     },
     "createVehicleResponses":{
@@ -2928,7 +3777,14 @@
     "eventExpression":{
       "type":"string",
       "max":2048,
-      "min":1
+      "min":1,
+      "sensitive":true
+    },
+    "fetchConfigEventExpression":{
+      "type":"string",
+      "max":400,
+      "min":1,
+      "sensitive":true
     },
     "fleetId":{
       "type":"string",
@@ -2947,6 +3803,7 @@
     "languageVersion":{
       "type":"integer",
       "box":true,
+      "max":1,
       "min":1
     },
     "listOfStrings":{
@@ -2993,6 +3850,12 @@
     "number":{"type":"integer"},
     "positiveInteger":{
       "type":"integer",
+      "box":true,
+      "min":1
+    },
+    "positiveLong":{
+      "type":"long",
+      "box":true,
       "min":1
     },
     "priority":{
@@ -3010,7 +3873,12 @@
       "type":"list",
       "member":{"shape":"SignalCatalogSummary"}
     },
-    "status":{"type":"string"},
+    "statusStr":{
+      "type":"string",
+      "max":20,
+      "min":7,
+      "pattern":"[A-Z_]*"
+    },
     "string":{"type":"string"},
     "timestamp":{"type":"timestamp"},
     "uint32":{
@@ -3026,6 +3894,7 @@
     "updateVehicleRequestItems":{
       "type":"list",
       "member":{"shape":"UpdateVehicleRequestItem"},
+      "max":10,
       "min":1
     },
     "updateVehicleResponseItems":{

@@ -5,7 +5,7 @@
     "AssociatePhoneNumbersWithVoiceConnector": "<p>Associates phone numbers with the specified Amazon Chime SDK Voice Connector.</p>",
     "AssociatePhoneNumbersWithVoiceConnectorGroup": "<p>Associates phone numbers with the specified Amazon Chime SDK Voice Connector group.</p>",
     "BatchDeletePhoneNumber": "<p> Moves phone numbers into the <b>Deletion queue</b>. Phone numbers must be disassociated from any users or Amazon Chime SDK Voice Connectors before they can be deleted. </p> <p> Phone numbers remain in the <b>Deletion queue</b> for 7 days before they are deleted permanently. </p>",
-    "BatchUpdatePhoneNumber": "<p>Updates one or more phone numbers.</p>",
+    "BatchUpdatePhoneNumber": "<p>Updates phone number product types, calling names, or phone number names. You can update one attribute at a time for each <code>UpdatePhoneNumberRequestItem</code>. For example, you can update the product type, the calling name, or phone name. </p> <note> <p>You cannot have a duplicate <code>phoneNumberId</code> in a request.</p> </note>",
     "CreatePhoneNumberOrder": "<p>Creates an order for phone numbers to be provisioned. For numbers outside the U.S., you must use the Amazon Chime SDK SIP media application dial-in product type.</p>",
     "CreateProxySession": "<p>Creates a proxy session for the specified Amazon Chime SDK Voice Connector for the specified participant phone numbers.</p>",
     "CreateSipMediaApplication": "<p>Creates a SIP media application. For more information about SIP media applications, see <a href=\"https://docs.aws.amazon.com/chime-sdk/latest/ag/manage-sip-applications.html\">Managing SIP media applications and rules</a> in the <i>Amazon Chime SDK Administrator Guide</i>.</p>",
@@ -21,6 +21,7 @@
     "DeleteSipRule": "<p>Deletes a SIP rule.</p>",
     "DeleteVoiceConnector": "<p>Deletes an Amazon Chime SDK Voice Connector. Any phone numbers associated with the Amazon Chime SDK Voice Connector must be disassociated from it before it can be deleted.</p>",
     "DeleteVoiceConnectorEmergencyCallingConfiguration": "<p>Deletes the emergency calling details from the specified Amazon Chime SDK Voice Connector.</p>",
+    "DeleteVoiceConnectorExternalSystemsConfiguration": "<p>Deletes the external systems configuration for a Voice Connector.</p>",
     "DeleteVoiceConnectorGroup": "<p>Deletes an Amazon Chime SDK Voice Connector group. Any <code>VoiceConnectorItems</code> and phone numbers associated with the group must be removed before it can be deleted.</p>",
     "DeleteVoiceConnectorOrigination": "<p>Deletes the origination settings for the specified Amazon Chime SDK Voice Connector. </p> <note> <p>If emergency calling is configured for the Voice Connector, it must be deleted prior to deleting the origination settings.</p> </note>",
     "DeleteVoiceConnectorProxy": "<p>Deletes the proxy configuration from the specified Amazon Chime SDK Voice Connector.</p>",
@@ -37,12 +38,13 @@
     "GetPhoneNumberSettings": "<p>Retrieves the phone number settings for the administrator's AWS account, such as the default outbound calling name.</p>",
     "GetProxySession": "<p>Retrieves the specified proxy session details for the specified Amazon Chime SDK Voice Connector.</p>",
     "GetSipMediaApplication": "<p>Retrieves the information for a SIP media application, including name, AWS Region, and endpoints.</p>",
-    "GetSipMediaApplicationAlexaSkillConfiguration": "<p>Gets the Alexa Skill configuration for the SIP media application.</p>",
+    "GetSipMediaApplicationAlexaSkillConfiguration": "<p>Gets the Alexa Skill configuration for the SIP media application.</p> <important> <p>Due to changes made by the Amazon Alexa service, this API is no longer available for use. For more information, refer to the <a href=\"https://developer.amazon.com/en-US/alexa/alexasmartproperties\">Alexa Smart Properties</a> page.</p> </important>",
     "GetSipMediaApplicationLoggingConfiguration": "<p>Retrieves the logging configuration for the specified SIP media application.</p>",
     "GetSipRule": "<p>Retrieves the details of a SIP rule, such as the rule ID, name, triggers, and target endpoints.</p>",
     "GetSpeakerSearchTask": "<p>Retrieves the details of the specified speaker search task.</p>",
     "GetVoiceConnector": "<p>Retrieves details for the specified Amazon Chime SDK Voice Connector, such as timestamps,name, outbound host, and encryption requirements.</p>",
     "GetVoiceConnectorEmergencyCallingConfiguration": "<p>Retrieves the emergency calling configuration details for the specified Voice Connector.</p>",
+    "GetVoiceConnectorExternalSystemsConfiguration": "<p>Gets information about an external systems configuration for a Voice Connector.</p>",
     "GetVoiceConnectorGroup": "<p>Retrieves details for the specified Amazon Chime SDK Voice Connector group, such as timestamps,name, and associated <code>VoiceConnectorItems</code>.</p>",
     "GetVoiceConnectorLoggingConfiguration": "<p>Retrieves the logging configuration settings for the specified Voice Connector. Shows whether SIP message logs are enabled for sending to Amazon CloudWatch Logs.</p>",
     "GetVoiceConnectorOrigination": "<p>Retrieves the origination settings for the specified Voice Connector.</p>",
@@ -66,9 +68,10 @@
     "ListVoiceConnectors": "<p>Lists the Amazon Chime SDK Voice Connectors in the administrators AWS account.</p>",
     "ListVoiceProfileDomains": "<p>Lists the specified voice profile domains in the administrator's AWS account. </p>",
     "ListVoiceProfiles": "<p>Lists the voice profiles in a voice profile domain.</p>",
-    "PutSipMediaApplicationAlexaSkillConfiguration": "<p>Updates the Alexa Skill configuration for the SIP media application.</p>",
+    "PutSipMediaApplicationAlexaSkillConfiguration": "<p>Updates the Alexa Skill configuration for the SIP media application.</p> <important> <p>Due to changes made by the Amazon Alexa service, this API is no longer available for use. For more information, refer to the <a href=\"https://developer.amazon.com/en-US/alexa/alexasmartproperties\">Alexa Smart Properties</a> page.</p> </important>",
     "PutSipMediaApplicationLoggingConfiguration": "<p>Updates the logging configuration for the specified SIP media application.</p>",
     "PutVoiceConnectorEmergencyCallingConfiguration": "<p>Updates a Voice Connector's emergency calling configuration.</p>",
+    "PutVoiceConnectorExternalSystemsConfiguration": "<p>Adds an external systems configuration to a Voice Connector.</p>",
     "PutVoiceConnectorLoggingConfiguration": "<p>Updates a Voice Connector's logging configuration.</p>",
     "PutVoiceConnectorOrigination": "<p>Updates a Voice Connector's origination settings.</p>",
     "PutVoiceConnectorProxy": "<p>Puts the specified proxy configuration to the specified Amazon Chime SDK Voice Connector.</p>",
@@ -84,7 +87,7 @@
     "TagResource": "<p>Adds a tag to the specified resource.</p>",
     "UntagResource": "<p>Removes tags from a resource.</p>",
     "UpdateGlobalSettings": "<p>Updates global settings for the Amazon Chime SDK Voice Connectors in an AWS account.</p>",
-    "UpdatePhoneNumber": "<p>Updates phone number details, such as product type or calling name, for the specified phone number ID. You can update one phone number detail at a time. For example, you can update either the product type or the calling name in one action.</p> <p>For numbers outside the U.S., you must use the Amazon Chime SDK SIP Media Application Dial-In product type.</p> <p>Updates to outbound calling names can take 72 hours to complete. Pending updates to outbound calling names must be complete before you can request another update.</p>",
+    "UpdatePhoneNumber": "<p>Updates phone number details, such as product type, calling name, or phone number name for the specified phone number ID. You can update one phone number detail at a time. For example, you can update either the product type, calling name, or phone number name in one action.</p> <p>For numbers outside the U.S., you must use the Amazon Chime SDK SIP Media Application Dial-In product type.</p> <p>Updates to outbound calling names can take 72 hours to complete. Pending updates to outbound calling names must be complete before you can request another update.</p>",
     "UpdatePhoneNumberSettings": "<p>Updates the phone number settings for the administrator's AWS account, such as the default outbound calling name. You can update the default outbound calling name once every seven days. Outbound calling names can take up to 72 hours to update.</p>",
     "UpdateProxySession": "<p>Updates the specified proxy session details, such as voice or SMS capabilities.</p>",
     "UpdateSipMediaApplication": "<p>Updates the details of the specified SIP media application.</p>",
@@ -208,7 +211,7 @@
         "GetVoiceToneAnalysisTaskRequest$IsCaller": "<p>Specifies whether the voice being analyzed is the caller (originator) or the callee (responder).</p>",
         "LoggingConfiguration$EnableSIPLogs": "<p>Boolean that enables sending SIP message logs to Amazon CloudWatch.</p>",
         "LoggingConfiguration$EnableMediaMetricLogs": "<p>Enables or disables media metrics logging.</p>",
-        "MediaInsightsConfiguration$Disabled": "<p>Denotes the configration as enabled or disabled.</p>",
+        "MediaInsightsConfiguration$Disabled": "<p>Denotes the configuration as enabled or disabled.</p>",
         "Origination$Disabled": "<p>When origination settings are disabled, inbound calls are not enabled for your Amazon Chime SDK Voice Connector. This parameter is not required, but you must specify this parameter or <code>Routes</code>.</p>",
         "Proxy$Disabled": "<p>When true, stops proxy sessions from being created on the specified Amazon Chime SDK Voice Connector.</p>",
         "PutVoiceConnectorProxyRequest$Disabled": "<p>When true, stops proxy sessions from being created on the specified Amazon Chime SDK Voice Connector.</p>",
@@ -304,6 +307,19 @@
     "ConflictException": {
       "base": "<p>Multiple instances of the same request were made simultaneously.</p>",
       "refs": {
+      }
+    },
+    "ContactCenterSystemType": {
+      "base": null,
+      "refs": {
+        "ContactCenterSystemTypeList$member": null
+      }
+    },
+    "ContactCenterSystemTypeList": {
+      "base": null,
+      "refs": {
+        "ExternalSystemsConfiguration$ContactCenterSystemTypes": "<p>The contact center system.</p>",
+        "PutVoiceConnectorExternalSystemsConfigurationRequest$ContactCenterSystemTypes": "<p>The contact center system to use.</p>"
       }
     },
     "Country": {
@@ -470,6 +486,11 @@
       "refs": {
       }
     },
+    "DeleteVoiceConnectorExternalSystemsConfigurationRequest": {
+      "base": null,
+      "refs": {
+      }
+    },
     "DeleteVoiceConnectorGroupRequest": {
       "base": null,
       "refs": {
@@ -576,6 +597,13 @@
       "base": null,
       "refs": {
         "PhoneNumberError$ErrorCode": "<p>The error code.</p>"
+      }
+    },
+    "ExternalSystemsConfiguration": {
+      "base": "<p>Contains information about an external systems configuration for a Voice Connector.</p>",
+      "refs": {
+        "GetVoiceConnectorExternalSystemsConfigurationResponse$ExternalSystemsConfiguration": "<p>An object that contains information about an external systems configuration for a Voice Connector.</p>",
+        "PutVoiceConnectorExternalSystemsConfigurationResponse$ExternalSystemsConfiguration": "<p>An object that contains information about an external systems configuration for a Voice Connector.</p>"
       }
     },
     "ForbiddenException": {
@@ -699,6 +727,16 @@
       }
     },
     "GetVoiceConnectorEmergencyCallingConfigurationResponse": {
+      "base": null,
+      "refs": {
+      }
+    },
+    "GetVoiceConnectorExternalSystemsConfigurationRequest": {
+      "base": null,
+      "refs": {
+      }
+    },
+    "GetVoiceConnectorExternalSystemsConfigurationResponse": {
       "base": null,
       "refs": {
       }
@@ -1040,6 +1078,7 @@
         "DeleteSipMediaApplicationRequest$SipMediaApplicationId": "<p>The SIP media application ID.</p>",
         "DeleteSipRuleRequest$SipRuleId": "<p>The SIP rule ID.</p>",
         "DeleteVoiceConnectorEmergencyCallingConfigurationRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
+        "DeleteVoiceConnectorExternalSystemsConfigurationRequest$VoiceConnectorId": "<p>The ID of the Voice Connector for which to delete the external system configuration.</p>",
         "DeleteVoiceConnectorGroupRequest$VoiceConnectorGroupId": "<p>The Voice Connector Group ID.</p>",
         "DeleteVoiceConnectorOriginationRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
         "DeleteVoiceConnectorRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
@@ -1053,6 +1092,7 @@
         "GetSipMediaApplicationRequest$SipMediaApplicationId": "<p>The SIP media application ID .</p>",
         "GetSipRuleRequest$SipRuleId": "<p>The SIP rule ID.</p>",
         "GetVoiceConnectorEmergencyCallingConfigurationRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
+        "GetVoiceConnectorExternalSystemsConfigurationRequest$VoiceConnectorId": "<p>The ID of the Voice Connector for which to return information about the external system configuration.</p>",
         "GetVoiceConnectorGroupRequest$VoiceConnectorGroupId": "<p>The Voice Connector group ID.</p>",
         "GetVoiceConnectorLoggingConfigurationRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
         "GetVoiceConnectorOriginationRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
@@ -1107,6 +1147,7 @@
         "ListProxySessionsRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
         "ProxySession$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
         "ProxySession$ProxySessionId": "<p>The proxy session ID.</p>",
+        "PutVoiceConnectorExternalSystemsConfigurationRequest$VoiceConnectorId": "<p>The ID of the Voice Connector for which to add the external system configuration.</p>",
         "PutVoiceConnectorProxyRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
         "StartSpeakerSearchTaskRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
         "StartVoiceToneAnalysisTaskRequest$VoiceConnectorId": "<p>The Voice Connector ID.</p>",
@@ -1126,7 +1167,7 @@
         "GetSpeakerSearchTaskRequest$SpeakerSearchTaskId": "<p>The ID of the speaker search task.</p>",
         "GetVoiceProfileDomainRequest$VoiceProfileDomainId": "<p>The voice profile domain ID.</p>",
         "GetVoiceProfileRequest$VoiceProfileId": "<p>The voice profile ID.</p>",
-        "GetVoiceToneAnalysisTaskRequest$VoiceToneAnalysisTaskId": "<p>The ID of the voice tone anlysis task.</p>",
+        "GetVoiceToneAnalysisTaskRequest$VoiceToneAnalysisTaskId": "<p>The ID of the voice tone analysis task.</p>",
         "ListVoiceProfilesRequest$VoiceProfileDomainId": "<p>The ID of the voice profile domain.</p>",
         "SpeakerSearchDetails$VoiceprintGenerationStatus": "<p>The status of a voice print generation operation, <code>VoiceprintGenerationSuccess</code> or <code>VoiceprintGenerationFailure</code>..</p>",
         "SpeakerSearchResult$VoiceProfileId": "<p>The voice profile ID.</p>",
@@ -1341,7 +1382,7 @@
       "refs": {
         "CreatePhoneNumberOrderRequest$Name": "<p>Specifies the name assigned to one or more phone numbers.</p>",
         "PhoneNumber$Name": "<p>The name of the phone number.</p>",
-        "UpdatePhoneNumberRequest$Name": "<p>Specifies the name assigned to one or more phone numbers.</p>",
+        "UpdatePhoneNumberRequest$Name": "<p>Specifies the updated name assigned to one or more phone numbers.</p>",
         "UpdatePhoneNumberRequestItem$Name": "<p>The name of the phone number.</p>"
       }
     },
@@ -1478,6 +1519,16 @@
       }
     },
     "PutVoiceConnectorEmergencyCallingConfigurationResponse": {
+      "base": null,
+      "refs": {
+      }
+    },
+    "PutVoiceConnectorExternalSystemsConfigurationRequest": {
+      "base": null,
+      "refs": {
+      }
+    },
+    "PutVoiceConnectorExternalSystemsConfigurationResponse": {
       "base": null,
       "refs": {
       }
@@ -1619,7 +1670,7 @@
         "ValidateE911AddressRequest$StreetInfo": "<p>The address street information, such as <code>8th Avenue</code>.</p>",
         "ValidateE911AddressRequest$City": "<p>The address city, such as <code>Portland</code>.</p>",
         "ValidateE911AddressRequest$State": "<p>The address state, such as <code>ME</code>.</p>",
-        "ValidateE911AddressRequest$Country": "<p>The country in the address being validated.</p>",
+        "ValidateE911AddressRequest$Country": "<p>The country in the address being validated as two-letter country code in ISO 3166-1 alpha-2 format, such as <code>US</code>. For more information, see <a href=\"https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\">ISO 3166-1 alpha-2</a> in Wikipedia.</p>",
         "ValidateE911AddressRequest$PostalCode": "<p>The dress postal code, such <code>04352</code>.</p>"
       }
     },
@@ -1661,6 +1712,19 @@
       "refs": {
       }
     },
+    "SessionBorderControllerType": {
+      "base": null,
+      "refs": {
+        "SessionBorderControllerTypeList$member": null
+      }
+    },
+    "SessionBorderControllerTypeList": {
+      "base": null,
+      "refs": {
+        "ExternalSystemsConfiguration$SessionBorderControllerTypes": "<p>The session border controllers.</p>",
+        "PutVoiceConnectorExternalSystemsConfigurationRequest$SessionBorderControllerTypes": "<p>The session border controllers to use.</p>"
+      }
+    },
     "SipApplicationPriority": {
       "base": null,
       "refs": {
@@ -1683,7 +1747,7 @@
       }
     },
     "SipMediaApplicationAlexaSkillConfiguration": {
-      "base": "<p>The Alexa Skill configuration of a SIP media application.</p>",
+      "base": "<p>The Alexa Skill configuration of a SIP media application.</p> <important> <p>Due to changes made by the Amazon Alexa service, this data type is no longer available for use. For more information, refer to the <a href=\"https://developer.amazon.com/en-US/alexa/alexasmartproperties\">Alexa Smart Properties</a> page.</p> </important>",
       "refs": {
         "GetSipMediaApplicationAlexaSkillConfigurationResponse$SipMediaApplicationAlexaSkillConfiguration": "<p>Returns the Alexa Skill configuration.</p>",
         "PutSipMediaApplicationAlexaSkillConfigurationRequest$SipMediaApplicationAlexaSkillConfiguration": "<p>The Alexa Skill configuration.</p>",
@@ -2108,7 +2172,7 @@
     "ValidationResult": {
       "base": null,
       "refs": {
-        "ValidateE911AddressResponse$ValidationResult": "<p>Number indicating the result of address validation. <code>0</code> means the address was perfect as-is and successfully validated. <code>1</code> means the address was corrected. <code>2</code> means the address sent was not close enough and was not validated.</p>"
+        "ValidateE911AddressResponse$ValidationResult": "<p>Number indicating the result of address validation.</p> <p>Each possible result is defined as follows:</p> <ul> <li> <p> <code>0</code> - Address validation succeeded.</p> </li> <li> <p> <code>1</code> - Address validation succeeded. The address was a close enough match and has been corrected as part of the address object.</p> </li> <li> <p> <code>2</code> - Address validation failed. You should re-submit the validation request with candidates from the <code>CandidateAddressList</code> result, if it's a close match.</p> </li> </ul>"
       }
     },
     "VoiceConnector": {
@@ -2155,6 +2219,13 @@
         "CreateVoiceConnectorGroupRequest$Name": "<p>The name of the Voice Connector group.</p>",
         "UpdateVoiceConnectorGroupRequest$Name": "<p>The name of the Voice Connector group.</p>",
         "VoiceConnectorGroup$Name": "<p>The name of a Voice Connector group.</p>"
+      }
+    },
+    "VoiceConnectorIntegrationType": {
+      "base": null,
+      "refs": {
+        "CreateVoiceConnectorRequest$IntegrationType": "<p>The connectors for use with Amazon Connect.</p> <p>The following options are available:</p> <ul> <li> <p> <code>CONNECT_CALL_TRANSFER_CONNECTOR</code> - Enables enterprises to integrate Amazon Connect with other voice systems to directly transfer voice calls and metadata without using the public telephone network. They can use Amazon Connect telephony and Interactive Voice Response (IVR) with their existing voice systems to modernize the IVR experience of their existing contact center and their enterprise and branch voice systems. Additionally, enterprises migrating their contact center to Amazon Connect can start with Connect telephony and IVR for immediate modernization ahead of agent migration.</p> </li> <li> <p> <code>CONNECT_ANALYTICS_CONNECTOR</code> - Enables enterprises to integrate Amazon Connect with other voice systems for real-time and post-call analytics. They can use Amazon Connect Contact Lens with their existing voice systems to provides call recordings, conversational analytics (including contact transcript, sensitive data redaction, content categorization, theme detection, sentiment analysis, real-time alerts, and post-contact summary), and agent performance evaluations (including evaluation forms, automated evaluation, supervisor review) with a rich user experience to display, search and filter customer interactions, and programmatic access to data streams and the data lake. Additionally, enterprises migrating their contact center to Amazon Connect can start with Contact Lens analytics and performance insights ahead of agent migration.</p> </li> </ul>",
+        "VoiceConnector$IntegrationType": "<p>The connectors for use with Amazon Connect.</p>"
       }
     },
     "VoiceConnectorItem": {

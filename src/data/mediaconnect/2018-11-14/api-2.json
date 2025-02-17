@@ -8,7 +8,10 @@
     "protocol": "rest-json",
     "jsonVersion": "1.1",
     "uid": "mediaconnect-2018-11-14",
-    "signatureVersion": "v4"
+    "signatureVersion": "v4",
+    "auth": [
+      "aws.auth#sigv4"
+    ]
   },
   "operations": {
     "AddBridgeOutputs": {
@@ -526,6 +529,74 @@
       },
       "output": {
         "shape": "DescribeFlowResponse"
+      },
+      "errors": [
+        {
+          "shape": "BadRequestException"
+        },
+        {
+          "shape": "InternalServerErrorException"
+        },
+        {
+          "shape": "ForbiddenException"
+        },
+        {
+          "shape": "NotFoundException"
+        },
+        {
+          "shape": "ServiceUnavailableException"
+        },
+        {
+          "shape": "TooManyRequestsException"
+        }
+      ]
+    },
+    "DescribeFlowSourceMetadata": {
+      "name": "DescribeFlowSourceMetadata",
+      "http": {
+        "method": "GET",
+        "requestUri": "/v1/flows/{flowArn}/source-metadata",
+        "responseCode": 200
+      },
+      "input": {
+        "shape": "DescribeFlowSourceMetadataRequest"
+      },
+      "output": {
+        "shape": "DescribeFlowSourceMetadataResponse"
+      },
+      "errors": [
+        {
+          "shape": "BadRequestException"
+        },
+        {
+          "shape": "InternalServerErrorException"
+        },
+        {
+          "shape": "ForbiddenException"
+        },
+        {
+          "shape": "NotFoundException"
+        },
+        {
+          "shape": "ServiceUnavailableException"
+        },
+        {
+          "shape": "TooManyRequestsException"
+        }
+      ]
+    },
+    "DescribeFlowSourceThumbnail": {
+      "name": "DescribeFlowSourceThumbnail",
+      "http": {
+        "method": "GET",
+        "requestUri": "/v1/flows/{flowArn}/source-thumbnail",
+        "responseCode": 200
+      },
+      "input": {
+        "shape": "DescribeFlowSourceThumbnailRequest"
+      },
+      "output": {
+        "shape": "DescribeFlowSourceThumbnailResponse"
       },
       "errors": [
         {
@@ -1764,6 +1835,10 @@
           "shape": "__string",
           "locationName": "multicastIp"
         },
+        "MulticastSourceSettings": {
+          "shape": "MulticastSourceSettings",
+          "locationName": "multicastSourceSettings"
+        },
         "Name": {
           "shape": "__string",
           "locationName": "name"
@@ -2165,6 +2240,10 @@
         "VpcInterfaceAttachment": {
           "shape": "VpcInterfaceAttachment",
           "locationName": "vpcInterfaceAttachment"
+        },
+        "OutputStatus": {
+          "shape": "OutputStatus",
+          "locationName": "outputStatus"
         }
       },
       "required": [
@@ -2178,6 +2257,15 @@
         "aes192",
         "aes256"
       ]
+    },
+    "AudioMonitoringSetting": {
+      "type": "structure",
+      "members": {
+        "SilentAudio": {
+          "shape": "SilentAudio",
+          "locationName": "silentAudio"
+        }
+      }
     },
     "BadRequestException": {
       "type": "structure",
@@ -2193,6 +2281,19 @@
       "exception": true,
       "error": {
         "httpStatusCode": 400
+      }
+    },
+    "BlackFrames": {
+      "type": "structure",
+      "members": {
+        "State": {
+          "shape": "State",
+          "locationName": "state"
+        },
+        "ThresholdSeconds": {
+          "shape": "__integer",
+          "locationName": "thresholdSeconds"
+        }
       }
     },
     "Bridge": {
@@ -2337,6 +2438,10 @@
           "shape": "__string",
           "locationName": "multicastIp"
         },
+        "MulticastSourceSettings": {
+          "shape": "MulticastSourceSettings",
+          "locationName": "multicastSourceSettings"
+        },
         "Name": {
           "shape": "__string",
           "locationName": "name"
@@ -2445,6 +2550,13 @@
       "enum": [
         "CONNECTED",
         "DISCONNECTED"
+      ]
+    },
+    "ContentQualityAnalysisState": {
+      "type": "string",
+      "enum": [
+        "ENABLED",
+        "DISABLED"
       ]
     },
     "CreateBridge420Exception": {
@@ -2568,6 +2680,10 @@
         "Maintenance": {
           "shape": "AddMaintenance",
           "locationName": "maintenance"
+        },
+        "SourceMonitoringConfig": {
+          "shape": "MonitoringConfig",
+          "locationName": "sourceMonitoringConfig"
         }
       },
       "required": [
@@ -2782,6 +2898,62 @@
         "Messages": {
           "shape": "Messages",
           "locationName": "messages"
+        }
+      }
+    },
+    "DescribeFlowSourceMetadataRequest": {
+      "type": "structure",
+      "members": {
+        "FlowArn": {
+          "shape": "__string",
+          "location": "uri",
+          "locationName": "flowArn"
+        }
+      },
+      "required": [
+        "FlowArn"
+      ]
+    },
+    "DescribeFlowSourceMetadataResponse": {
+      "type": "structure",
+      "members": {
+        "FlowArn": {
+          "shape": "__string",
+          "locationName": "flowArn"
+        },
+        "Messages": {
+          "shape": "__listOfMessageDetail",
+          "locationName": "messages"
+        },
+        "Timestamp": {
+          "shape": "__timestampIso8601",
+          "locationName": "timestamp"
+        },
+        "TransportMediaInfo": {
+          "shape": "TransportMediaInfo",
+          "locationName": "transportMediaInfo"
+        }
+      }
+    },
+    "DescribeFlowSourceThumbnailRequest": {
+      "type": "structure",
+      "members": {
+        "FlowArn": {
+          "shape": "__string",
+          "location": "uri",
+          "locationName": "flowArn"
+        }
+      },
+      "required": [
+        "FlowArn"
+      ]
+    },
+    "DescribeFlowSourceThumbnailResponse": {
+      "type": "structure",
+      "members": {
+        "ThumbnailDetails": {
+          "shape": "ThumbnailDetails",
+          "locationName": "thumbnailDetails"
         }
       }
     },
@@ -3179,6 +3351,10 @@
         "Maintenance": {
           "shape": "Maintenance",
           "locationName": "maintenance"
+        },
+        "SourceMonitoringConfig": {
+          "shape": "MonitoringConfig",
+          "locationName": "sourceMonitoringConfig"
         }
       },
       "required": [
@@ -3271,6 +3447,36 @@
       "exception": true,
       "error": {
         "httpStatusCode": 403
+      }
+    },
+    "FrameResolution": {
+      "type": "structure",
+      "members": {
+        "FrameHeight": {
+          "shape": "__integer",
+          "locationName": "frameHeight"
+        },
+        "FrameWidth": {
+          "shape": "__integer",
+          "locationName": "frameWidth"
+        }
+      },
+      "required": [
+        "FrameWidth",
+        "FrameHeight"
+      ]
+    },
+    "FrozenFrames": {
+      "type": "structure",
+      "members": {
+        "State": {
+          "shape": "State",
+          "locationName": "state"
+        },
+        "ThresholdSeconds": {
+          "shape": "__integer",
+          "locationName": "thresholdSeconds"
+        }
       }
     },
     "Gateway": {
@@ -4210,6 +4416,36 @@
         "Errors"
       ]
     },
+    "MonitoringConfig": {
+      "type": "structure",
+      "members": {
+        "ThumbnailState": {
+          "shape": "ThumbnailState",
+          "locationName": "thumbnailState"
+        },
+        "AudioMonitoringSettings": {
+          "shape": "__listOfAudioMonitoringSetting",
+          "locationName": "audioMonitoringSettings"
+        },
+        "ContentQualityAnalysisState": {
+          "shape": "ContentQualityAnalysisState",
+          "locationName": "contentQualityAnalysisState"
+        },
+        "VideoMonitoringSettings": {
+          "shape": "__listOfVideoMonitoringSetting",
+          "locationName": "videoMonitoringSettings"
+        }
+      }
+    },
+    "MulticastSourceSettings": {
+      "type": "structure",
+      "members": {
+        "MulticastSourceIp": {
+          "shape": "__string",
+          "locationName": "multicastSourceIp"
+        }
+      }
+    },
     "NetworkInterfaceType": {
       "type": "string",
       "enum": [
@@ -4342,11 +4578,22 @@
         "BridgePorts": {
           "shape": "__listOf__integer",
           "locationName": "bridgePorts"
+        },
+        "OutputStatus": {
+          "shape": "OutputStatus",
+          "locationName": "outputStatus"
         }
       },
       "required": [
         "OutputArn",
         "Name"
+      ]
+    },
+    "OutputStatus": {
+      "type": "string",
+      "enum": [
+        "ENABLED",
+        "DISABLED"
       ]
     },
     "PriceUnits": {
@@ -4887,6 +5134,19 @@
         }
       }
     },
+    "SilentAudio": {
+      "type": "structure",
+      "members": {
+        "State": {
+          "shape": "State",
+          "locationName": "state"
+        },
+        "ThresholdSeconds": {
+          "shape": "__integer",
+          "locationName": "thresholdSeconds"
+        }
+      }
+    },
     "Source": {
       "type": "structure",
       "members": {
@@ -5077,6 +5337,42 @@
         "DENSITY"
       ]
     },
+    "ThumbnailDetails": {
+      "type": "structure",
+      "members": {
+        "FlowArn": {
+          "shape": "__string",
+          "locationName": "flowArn"
+        },
+        "Thumbnail": {
+          "shape": "__string",
+          "locationName": "thumbnail"
+        },
+        "ThumbnailMessages": {
+          "shape": "__listOfMessageDetail",
+          "locationName": "thumbnailMessages"
+        },
+        "Timecode": {
+          "shape": "__string",
+          "locationName": "timecode"
+        },
+        "Timestamp": {
+          "shape": "__timestampIso8601",
+          "locationName": "timestamp"
+        }
+      },
+      "required": [
+        "ThumbnailMessages",
+        "FlowArn"
+      ]
+    },
+    "ThumbnailState": {
+      "type": "string",
+      "enum": [
+        "ENABLED",
+        "DISABLED"
+      ]
+    },
     "TooManyRequestsException": {
       "type": "structure",
       "members": {
@@ -5153,6 +5449,90 @@
         "Protocol"
       ]
     },
+    "TransportMediaInfo": {
+      "type": "structure",
+      "members": {
+        "Programs": {
+          "shape": "__listOfTransportStreamProgram",
+          "locationName": "programs"
+        }
+      },
+      "required": [
+        "Programs"
+      ]
+    },
+    "TransportStream": {
+      "type": "structure",
+      "members": {
+        "Channels": {
+          "shape": "__integer",
+          "locationName": "channels"
+        },
+        "Codec": {
+          "shape": "__string",
+          "locationName": "codec"
+        },
+        "FrameRate": {
+          "shape": "__string",
+          "locationName": "frameRate"
+        },
+        "FrameResolution": {
+          "shape": "FrameResolution",
+          "locationName": "frameResolution"
+        },
+        "Pid": {
+          "shape": "__integer",
+          "locationName": "pid"
+        },
+        "SampleRate": {
+          "shape": "__integer",
+          "locationName": "sampleRate"
+        },
+        "SampleSize": {
+          "shape": "__integer",
+          "locationName": "sampleSize"
+        },
+        "StreamType": {
+          "shape": "__string",
+          "locationName": "streamType"
+        }
+      },
+      "required": [
+        "StreamType",
+        "Pid"
+      ]
+    },
+    "TransportStreamProgram": {
+      "type": "structure",
+      "members": {
+        "PcrPid": {
+          "shape": "__integer",
+          "locationName": "pcrPid"
+        },
+        "ProgramName": {
+          "shape": "__string",
+          "locationName": "programName"
+        },
+        "ProgramNumber": {
+          "shape": "__integer",
+          "locationName": "programNumber"
+        },
+        "ProgramPid": {
+          "shape": "__integer",
+          "locationName": "programPid"
+        },
+        "Streams": {
+          "shape": "__listOfTransportStream",
+          "locationName": "streams"
+        }
+      },
+      "required": [
+        "ProgramPid",
+        "PcrPid",
+        "ProgramNumber",
+        "Streams"
+      ]
+    },
     "UntagResourceRequest": {
       "type": "structure",
       "members": {
@@ -5217,6 +5597,10 @@
         "MulticastIp": {
           "shape": "__string",
           "locationName": "multicastIp"
+        },
+        "MulticastSourceSettings": {
+          "shape": "MulticastSourceSettings",
+          "locationName": "multicastSourceSettings"
         },
         "NetworkName": {
           "shape": "__string",
@@ -5625,6 +6009,10 @@
         "VpcInterfaceAttachment": {
           "shape": "VpcInterfaceAttachment",
           "locationName": "vpcInterfaceAttachment"
+        },
+        "OutputStatus": {
+          "shape": "OutputStatus",
+          "locationName": "outputStatus"
         }
       },
       "required": [
@@ -5661,6 +6049,10 @@
         "Maintenance": {
           "shape": "UpdateMaintenance",
           "locationName": "maintenance"
+        },
+        "SourceMonitoringConfig": {
+          "shape": "MonitoringConfig",
+          "locationName": "sourceMonitoringConfig"
         }
       },
       "required": [
@@ -5858,6 +6250,19 @@
         }
       }
     },
+    "VideoMonitoringSetting": {
+      "type": "structure",
+      "members": {
+        "BlackFrames": {
+          "shape": "BlackFrames",
+          "locationName": "blackFrames"
+        },
+        "FrozenFrames": {
+          "shape": "FrozenFrames",
+          "locationName": "frozenFrames"
+        }
+      }
+    },
     "VpcInterface": {
       "type": "structure",
       "members": {
@@ -5966,6 +6371,12 @@
       "type": "list",
       "member": {
         "shape": "AddOutputRequest"
+      }
+    },
+    "__listOfAudioMonitoringSetting": {
+      "type": "list",
+      "member": {
+        "shape": "AudioMonitoringSetting"
       }
     },
     "__listOfBridgeOutput": {
@@ -6116,6 +6527,24 @@
       "type": "list",
       "member": {
         "shape": "Source"
+      }
+    },
+    "__listOfTransportStream": {
+      "type": "list",
+      "member": {
+        "shape": "TransportStream"
+      }
+    },
+    "__listOfTransportStreamProgram": {
+      "type": "list",
+      "member": {
+        "shape": "TransportStreamProgram"
+      }
+    },
+    "__listOfVideoMonitoringSetting": {
+      "type": "list",
+      "member": {
+        "shape": "VideoMonitoringSetting"
       }
     },
     "__listOfVpcInterface": {
